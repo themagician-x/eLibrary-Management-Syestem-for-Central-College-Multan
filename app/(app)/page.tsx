@@ -1,12 +1,6 @@
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
-
-const stats = [
-  { label: "Total books", value: "—", note: "M1", href: "/books" },
-  { label: "Registered students", value: "—", note: "M2", href: "/students" },
-  { label: "Books issued", value: "—", note: "M3", href: "/circulation" },
-  { label: "Overdue", value: "—", note: "M3", href: "/circulation" },
-];
+import { createClient } from "@/lib/supabase/server";
 
 const roadmap = [
   { m: "M1", title: "Catalogue", desc: "Books CRUD, covers, QR/barcode, CSV import" },
@@ -17,7 +11,19 @@ const roadmap = [
   { m: "M6", title: "Emails + Cron", desc: "Issue / due / overdue reminders" },
 ];
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  const supabase = await createClient();
+  const { count: bookCount } = await supabase
+    .from("books")
+    .select("*", { count: "exact", head: true });
+
+  const stats = [
+    { label: "Total books", value: bookCount ?? 0, note: "M1", href: "/books" },
+    { label: "Registered students", value: "—", note: "M2", href: "/students" },
+    { label: "Books issued", value: "—", note: "M3", href: "/circulation" },
+    { label: "Overdue", value: "—", note: "M3", href: "/circulation" },
+  ];
+
   return (
     <PageShell
       title="Dashboard"
