@@ -13,16 +13,20 @@ const roadmap = [
 
 export default async function Dashboard() {
   const supabase = await createClient();
-  const [{ count: bookCount }, { count: studentCount }] = await Promise.all([
-    supabase.from("books").select("*", { count: "exact", head: true }),
-    supabase.from("students").select("*", { count: "exact", head: true }),
-  ]);
+  const nowIso = new Date().toISOString();
+  const [{ count: bookCount }, { count: studentCount }, { count: issuedCount }, { count: overdueCount }] =
+    await Promise.all([
+      supabase.from("books").select("*", { count: "exact", head: true }),
+      supabase.from("students").select("*", { count: "exact", head: true }),
+      supabase.from("loans").select("*", { count: "exact", head: true }).is("returned_at", null),
+      supabase.from("loans").select("*", { count: "exact", head: true }).is("returned_at", null).lt("due_at", nowIso),
+    ]);
 
   const stats = [
     { label: "Total books", value: bookCount ?? 0, note: "M1", href: "/books" },
     { label: "Registered students", value: studentCount ?? 0, note: "M2", href: "/students" },
-    { label: "Books issued", value: "—", note: "M3", href: "/circulation" },
-    { label: "Overdue", value: "—", note: "M3", href: "/circulation" },
+    { label: "Books issued", value: issuedCount ?? 0, note: "M3", href: "/circulation" },
+    { label: "Overdue", value: overdueCount ?? 0, note: "M3", href: "/circulation?filter=overdue" },
   ];
 
   return (

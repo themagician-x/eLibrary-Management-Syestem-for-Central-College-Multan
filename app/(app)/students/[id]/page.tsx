@@ -21,6 +21,22 @@ export default async function StudentProfilePage({
   if (!data) notFound();
   const s = data as Student;
 
+  const [{ count: totalBorrowed }, { data: currentLoans }] = await Promise.all([
+    supabase.from("loans").select("*", { count: "exact", head: true }).eq("student_id", id),
+    supabase
+      .from("loans")
+      .select("id,due_at,book:books(id,title,author)")
+      .eq("student_id", id)
+      .is("returned_at", null)
+      .order("due_at", { ascending: true }),
+  ]);
+  const loans = (currentLoans ?? []) as unknown as {
+    id: string;
+    due_at: string;
+    book: { id: string; title: string; author: string | null } | null;
+  }[];
+  const overdue = loans.filter((l) => new Date(l.due_at).getTime() < Date.now()).length;
+
   const meta: [string, string | null][] = [
     ["Roll number", s.roll_no],
     ["Class / Department", s.class_dept],
@@ -64,22 +80,42 @@ export default async function StudentProfilePage({
             ))}
           </dl>
 
-          {/* borrowing activity — arrives with circulation/fines */}
+          {/* borrowing activity */}
           <div>
             <h3 className="mb-3 font-display text-base font-semibold text-navy-900">Borrowing activity</h3>
             <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                { label: "Current loans", note: "M3" },
-                { label: "Total borrowed", note: "M3" },
-                { label: "Outstanding fines", note: "M4" },
-              ].map((x) => (
-                <div key={x.label} className="rounded-2xl border border-mist-deep bg-paper p-4">
-                  <p className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">{x.label}</p>
-                  <p className="mt-2 font-display text-2xl font-semibold text-mist-deep">—</p>
-                  <p className="mt-1 font-mono text-[0.55rem] uppercase tracking-wider text-ink-mute/70">arrives in {x.note}</p>
-                </div>
-              ))}
+              <div className="rounded-2xl border border-mist-deep bg-paper p-4">
+                <p className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">Current loans</p>
+                <p className="mt-2 font-display text-2xl font-semibold text-navy-900">{loans.length}</p>
+              </div>
+              <div className="rounded-2xl border border-mist-deep bg-paper p-4">
+                <p className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">Total borrowed</p>
+                <p className="mt-2 font-display text-2xl font-semibold text-navy-900">{totalBorrowed ?? 0}</p>
+              </div>
+              <div className={`rounded-2xl border p-4 ${overdue ? "border-danger/30 bg-danger-soft" : "border-mist-deep bg-paper"}`}>
+                <p className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">Overdue</p>
+                <p className={`mt-2 font-display text-2xl font-semibold ${overdue ? "text-danger" : "text-navy-900"}`}>{overdue}</p>
+              </div>
             </div>
+
+            {loans.length > 0 && (
+              <div className="mt-4 overflow-hidden rounded-2xl border border-mist-deep">
+                {loans.map((l) => {
+                  const isOverdue = new Date(l.due_at).getTime() < Date.now();
+                  return (
+                    <Link key={l.id} href={`/books/${l.book?.id}`} className="flex items-center justify-between gap-3 border-b border-mist bg-paper px-4 py-3 last:border-0 hover:bg-mist/50">
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-navy-900">{l.book?.title ?? "Unknown book"}</span>
+                        <span className="block truncate text-xs text-ink-mute">{l.book?.author ?? ""}</span>
+                      </span>
+                      <span className={`flex-none rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold ${isOverdue ? "bg-danger text-white" : "bg-mist text-ink-soft"}`}>
+                        Due {new Date(l.due_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>

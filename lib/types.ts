@@ -32,6 +32,23 @@ export type Student = {
   updated_at: string;
 };
 
+export type Loan = {
+  id: string;
+  book_id: string;
+  student_id: string;
+  issued_at: string;
+  due_at: string;
+  returned_at: string | null;
+  renew_count: number;
+  created_at: string;
+};
+
+/** A loan joined with its book and student, as fetched for display. */
+export type LoanWithRefs = Loan & {
+  book: Pick<Book, "id" | "title" | "author" | "barcode" | "cover_url"> | null;
+  student: Pick<Student, "id" | "name" | "roll_no" | "photo_url"> | null;
+};
+
 /** Fields the admin edits in the book form. */
 export type BookInput = {
   title: string;
