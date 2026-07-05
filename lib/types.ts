@@ -49,6 +49,26 @@ export type LoanWithRefs = Loan & {
   student: Pick<Student, "id" | "name" | "roll_no" | "photo_url"> | null;
 };
 
+export type FineReason = "late" | "lost" | "damaged";
+export type FineStatus = "unpaid" | "paid" | "waived";
+
+export type Fine = {
+  id: string;
+  student_id: string;
+  loan_id: string | null;
+  amount: number;
+  reason: FineReason;
+  status: FineStatus;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type FineWithRefs = Fine & {
+  student: Pick<Student, "id" | "name" | "roll_no" | "photo_url"> | null;
+  loan: { book: Pick<Book, "id" | "title"> | null } | null;
+};
+
 /** Fields the admin edits in the book form. */
 export type BookInput = {
   title: string;

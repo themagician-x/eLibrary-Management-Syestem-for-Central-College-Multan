@@ -5,6 +5,7 @@ import PageShell from "@/components/PageShell";
 import Avatar from "@/components/Avatar";
 import ConfirmDelete from "@/components/ConfirmDelete";
 import { createClient } from "@/lib/supabase/server";
+import { money } from "@/lib/config";
 import type { Student } from "@/lib/types";
 import { deleteStudent } from "../actions";
 
@@ -21,7 +22,7 @@ export default async function StudentProfilePage({
   if (!data) notFound();
   const s = data as Student;
 
-  const [{ count: totalBorrowed }, { data: currentLoans }] = await Promise.all([
+  const [{ count: totalBorrowed }, { data: currentLoans }, { data: unpaidFines }] = await Promise.all([
     supabase.from("loans").select("*", { count: "exact", head: true }).eq("student_id", id),
     supabase
       .from("loans")
@@ -29,7 +30,9 @@ export default async function StudentProfilePage({
       .eq("student_id", id)
       .is("returned_at", null)
       .order("due_at", { ascending: true }),
+    supabase.from("fines").select("amount").eq("student_id", id).eq("status", "unpaid"),
   ]);
+  const outstandingFines = (unpaidFines ?? []).reduce((s, r) => s + Number(r.amount), 0);
   const loans = (currentLoans ?? []) as unknown as {
     id: string;
     due_at: string;
@@ -83,7 +86,7 @@ export default async function StudentProfilePage({
           {/* borrowing activity */}
           <div>
             <h3 className="mb-3 font-display text-base font-semibold text-navy-900">Borrowing activity</h3>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div className="rounded-2xl border border-mist-deep bg-paper p-4">
                 <p className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">Current loans</p>
                 <p className="mt-2 font-display text-2xl font-semibold text-navy-900">{loans.length}</p>
@@ -96,6 +99,10 @@ export default async function StudentProfilePage({
                 <p className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">Overdue</p>
                 <p className={`mt-2 font-display text-2xl font-semibold ${overdue ? "text-danger" : "text-navy-900"}`}>{overdue}</p>
               </div>
+              <Link href="/fines" className={`rounded-2xl border p-4 transition-colors ${outstandingFines > 0 ? "border-danger/30 bg-danger-soft hover:border-danger/50" : "border-mist-deep bg-paper hover:border-gold-500/50"}`}>
+                <p className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">Outstanding fines</p>
+                <p className={`mt-2 font-display text-2xl font-semibold ${outstandingFines > 0 ? "text-danger" : "text-navy-900"}`}>{money(outstandingFines)}</p>
+              </Link>
             </div>
 
             {loans.length > 0 && (

@@ -2,14 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { LOAN_DAYS, MAX_BOOKS_PER_STUDENT, MAX_RENEWS } from "@/lib/config";
+import { LOAN_DAYS, MAX_BOOKS_PER_STUDENT, MAX_RENEWS, FINE_PER_DAY } from "@/lib/config";
 
-export type ActionResult = { error?: string };
+export type ActionResult = { error?: string; fine?: number };
 
 function revalidate() {
   revalidatePath("/circulation");
   revalidatePath("/");
   revalidatePath("/books");
+  revalidatePath("/fines");
 }
 
 export async function issueBook(bookId: string, studentId: string): Promise<ActionResult> {
@@ -28,10 +29,13 @@ export async function issueBook(bookId: string, studentId: string): Promise<Acti
 
 export async function returnLoan(loanId: string): Promise<ActionResult> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("return_loan", { p_loan_id: loanId });
+  const { data, error } = await supabase.rpc("return_loan", {
+    p_loan_id: loanId,
+    p_fine_per_day: FINE_PER_DAY,
+  });
   if (error) return { error: error.message };
   revalidate();
-  return {};
+  return { fine: Number(data) || 0 };
 }
 
 export async function renewLoan(loanId: string): Promise<ActionResult> {
