@@ -17,6 +17,21 @@ export type Book = {
   updated_at: string;
 };
 
+export type StudentStatus = "active" | "blocked";
+
+export type Student = {
+  id: string;
+  name: string;
+  roll_no: string | null;
+  class_dept: string | null;
+  email: string | null;
+  phone: string | null;
+  photo_url: string | null;
+  status: StudentStatus;
+  created_at: string;
+  updated_at: string;
+};
+
 /** Fields the admin edits in the book form. */
 export type BookInput = {
   title: string;

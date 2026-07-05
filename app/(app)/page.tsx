@@ -13,13 +13,14 @@ const roadmap = [
 
 export default async function Dashboard() {
   const supabase = await createClient();
-  const { count: bookCount } = await supabase
-    .from("books")
-    .select("*", { count: "exact", head: true });
+  const [{ count: bookCount }, { count: studentCount }] = await Promise.all([
+    supabase.from("books").select("*", { count: "exact", head: true }),
+    supabase.from("students").select("*", { count: "exact", head: true }),
+  ]);
 
   const stats = [
     { label: "Total books", value: bookCount ?? 0, note: "M1", href: "/books" },
-    { label: "Registered students", value: "—", note: "M2", href: "/students" },
+    { label: "Registered students", value: studentCount ?? 0, note: "M2", href: "/students" },
     { label: "Books issued", value: "—", note: "M3", href: "/circulation" },
     { label: "Overdue", value: "—", note: "M3", href: "/circulation" },
   ];
