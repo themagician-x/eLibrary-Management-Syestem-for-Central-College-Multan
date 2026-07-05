@@ -69,6 +69,22 @@ export type FineWithRefs = Fine & {
   loan: { book: Pick<Book, "id" | "title"> | null } | null;
 };
 
+export type ReservationStatus = "waiting" | "ready" | "fulfilled" | "cancelled";
+
+export type Reservation = {
+  id: string;
+  book_id: string;
+  student_id: string;
+  status: ReservationStatus;
+  created_at: string;
+  ready_at: string | null;
+};
+
+export type ReservationWithRefs = Reservation & {
+  book: Pick<Book, "id" | "title" | "author" | "available_copies"> | null;
+  student: Pick<Student, "id" | "name" | "roll_no" | "photo_url"> | null;
+};
+
 /** Fields the admin edits in the book form. */
 export type BookInput = {
   title: string;

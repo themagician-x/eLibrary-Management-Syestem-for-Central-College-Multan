@@ -21,6 +21,12 @@ export default async function BookDetailPage({
   if (!data) notFound();
   const book = data as Book;
 
+  const { count: reservedCount } = await supabase
+    .from("reservations")
+    .select("*", { count: "exact", head: true })
+    .eq("book_id", id)
+    .in("status", ["waiting", "ready"]);
+
   const qr = await QRCode.toDataURL(book.id, { margin: 1, width: 240 });
 
   const meta: [string, string | number | null][] = [
@@ -60,9 +66,16 @@ export default async function BookDetailPage({
 
         {/* details */}
         <div>
-          <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${book.available_copies > 0 ? "bg-ok-soft text-ok" : "bg-danger-soft text-danger"}`}>
-            {book.available_copies} of {book.total_copies} available
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${book.available_copies > 0 ? "bg-ok-soft text-ok" : "bg-danger-soft text-danger"}`}>
+              {book.available_copies} of {book.total_copies} available
+            </span>
+            {reservedCount ? (
+              <Link href="/reservations" className="inline-block rounded-full bg-gold-100 px-3 py-1 text-xs font-bold text-gold-700 hover:bg-gold-400/40">
+                {reservedCount} in queue
+              </Link>
+            ) : null}
+          </div>
           <dl className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2">
             {meta.map(([k, val]) => (
               <div key={k} className="border-b border-mist pb-3">

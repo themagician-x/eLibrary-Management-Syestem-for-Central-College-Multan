@@ -33,6 +33,18 @@ export default async function StudentProfilePage({
     supabase.from("fines").select("amount").eq("student_id", id).eq("status", "unpaid"),
   ]);
   const outstandingFines = (unpaidFines ?? []).reduce((s, r) => s + Number(r.amount), 0);
+
+  const { data: holdsData } = await supabase
+    .from("reservations")
+    .select("id,status,book:books(id,title)")
+    .eq("student_id", id)
+    .in("status", ["waiting", "ready"])
+    .order("created_at", { ascending: true });
+  const holds = (holdsData ?? []) as unknown as {
+    id: string;
+    status: string;
+    book: { id: string; title: string } | null;
+  }[];
   const loans = (currentLoans ?? []) as unknown as {
     id: string;
     due_at: string;
@@ -121,6 +133,22 @@ export default async function StudentProfilePage({
                     </Link>
                   );
                 })}
+              </div>
+            )}
+
+            {holds.length > 0 && (
+              <div className="mt-4">
+                <p className="mb-2 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-ink-mute">Reservations</p>
+                <div className="overflow-hidden rounded-2xl border border-mist-deep">
+                  {holds.map((h) => (
+                    <Link key={h.id} href={`/books/${h.book?.id}`} className="flex items-center justify-between gap-3 border-b border-mist bg-paper px-4 py-3 last:border-0 hover:bg-mist/50">
+                      <span className="truncate text-sm font-semibold text-navy-900">{h.book?.title ?? "Unknown book"}</span>
+                      <span className={`flex-none rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold ${h.status === "ready" ? "bg-ok text-white" : "bg-mist text-ink-soft"}`}>
+                        {h.status === "ready" ? "Ready" : "Waiting"}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>
