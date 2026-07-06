@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import AsyncPicker, { type PickOption } from "@/components/AsyncPicker";
 import { issueBook } from "./actions";
 
-export default function IssuePanel() {
+export default function IssuePanel({ loanDays, maxBooks }: { loanDays: number; maxBooks: number }) {
   const router = useRouter();
   const [book, setBook] = useState<PickOption | null>(null);
   const [student, setStudent] = useState<PickOption | null>(null);
@@ -87,7 +87,7 @@ export default function IssuePanel() {
       {msg?.err && <p className="mt-3 rounded-lg bg-danger-soft px-3.5 py-2 text-sm font-medium text-danger">{msg.err}</p>}
       {msg?.ok && <p className="mt-3 rounded-lg bg-ok-soft px-3.5 py-2 text-sm font-medium text-ok">{msg.ok}</p>}
       <p className="mt-3 font-mono text-[0.6rem] uppercase tracking-wider text-navy-100/45">
-        14-day loan · max 3 books per student · scan a QR label to auto-select
+        {loanDays}-day loan · max {maxBooks} books per student · scan a QR label to auto-select
       </p>
     </div>
   );

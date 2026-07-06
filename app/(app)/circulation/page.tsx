@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import { createClient } from "@/lib/supabase/server";
-import { MAX_RENEWS } from "@/lib/config";
+import { getSettings } from "@/lib/settings";
 import type { LoanWithRefs } from "@/lib/types";
 import IssuePanel from "./issue-panel";
 import LoanActions from "./loan-actions";
@@ -30,6 +30,7 @@ export default async function CirculationPage({
 }) {
   const { filter = "" } = await searchParams;
   const supabase = await createClient();
+  const settings = await getSettings();
 
   let query = supabase
     .from("loans")
@@ -46,7 +47,7 @@ export default async function CirculationPage({
 
   return (
     <PageShell title="Circulation" subtitle="Issue, return and renew books.">
-      <IssuePanel />
+      <IssuePanel loanDays={settings.loan_days} maxBooks={settings.max_books} />
 
       {/* current loans */}
       <div className="mt-10">
@@ -99,7 +100,7 @@ export default async function CirculationPage({
                   <span className="text-sm text-ink-soft">{fmt(l.issued_at)}</span>
                   <span><span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold ${d.cls}`}>{d.label}</span></span>
                   <div className="lg:justify-self-end">
-                    <LoanActions loanId={l.id} canRenew={l.renew_count < MAX_RENEWS} />
+                    <LoanActions loanId={l.id} canRenew={l.renew_count < settings.max_renews} />
                   </div>
                 </div>
               );

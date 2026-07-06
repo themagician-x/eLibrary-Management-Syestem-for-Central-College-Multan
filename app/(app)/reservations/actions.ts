@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { LOAN_DAYS, MAX_BOOKS_PER_STUDENT } from "@/lib/config";
+import { getSettings } from "@/lib/settings";
 
 export type ActionResult = { error?: string; position?: number };
 
@@ -34,11 +34,12 @@ export async function cancelReservation(id: string): Promise<ActionResult> {
 /** Issue the reserved book to the student (fulfils the reservation via issue_book). */
 export async function issueReserved(bookId: string, studentId: string): Promise<ActionResult> {
   const supabase = await createClient();
+  const { loan_days, max_books } = await getSettings();
   const { error } = await supabase.rpc("issue_book", {
     p_book_id: bookId,
     p_student_id: studentId,
-    p_days: LOAN_DAYS,
-    p_max: MAX_BOOKS_PER_STUDENT,
+    p_days: loan_days,
+    p_max: max_books,
   });
   if (error) return { error: error.message };
   revalidate();

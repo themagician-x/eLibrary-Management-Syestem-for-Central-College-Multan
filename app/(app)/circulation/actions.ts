@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { LOAN_DAYS, MAX_BOOKS_PER_STUDENT, MAX_RENEWS, FINE_PER_DAY } from "@/lib/config";
+import { getSettings } from "@/lib/settings";
 
 export type ActionResult = { error?: string; fine?: number };
 
@@ -16,11 +16,12 @@ function revalidate() {
 export async function issueBook(bookId: string, studentId: string): Promise<ActionResult> {
   if (!bookId || !studentId) return { error: "Pick a book and a student." };
   const supabase = await createClient();
+  const { loan_days, max_books } = await getSettings();
   const { error } = await supabase.rpc("issue_book", {
     p_book_id: bookId,
     p_student_id: studentId,
-    p_days: LOAN_DAYS,
-    p_max: MAX_BOOKS_PER_STUDENT,
+    p_days: loan_days,
+    p_max: max_books,
   });
   if (error) return { error: error.message };
   revalidate();
@@ -29,9 +30,10 @@ export async function issueBook(bookId: string, studentId: string): Promise<Acti
 
 export async function returnLoan(loanId: string): Promise<ActionResult> {
   const supabase = await createClient();
+  const { fine_per_day } = await getSettings();
   const { data, error } = await supabase.rpc("return_loan", {
     p_loan_id: loanId,
-    p_fine_per_day: FINE_PER_DAY,
+    p_fine_per_day: fine_per_day,
   });
   if (error) return { error: error.message };
   revalidate();
@@ -40,10 +42,11 @@ export async function returnLoan(loanId: string): Promise<ActionResult> {
 
 export async function renewLoan(loanId: string): Promise<ActionResult> {
   const supabase = await createClient();
+  const { loan_days, max_renews } = await getSettings();
   const { error } = await supabase.rpc("renew_loan", {
     p_loan_id: loanId,
-    p_days: LOAN_DAYS,
-    p_max_renews: MAX_RENEWS,
+    p_days: loan_days,
+    p_max_renews: max_renews,
   });
   if (error) return { error: error.message };
   revalidate();

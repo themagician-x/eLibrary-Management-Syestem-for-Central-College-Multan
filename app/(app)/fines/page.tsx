@@ -3,6 +3,7 @@ import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import { createClient } from "@/lib/supabase/server";
 import { money } from "@/lib/config";
+import { getSettings } from "@/lib/settings";
 import type { FineWithRefs } from "@/lib/types";
 import AddCharge from "./add-charge";
 import FineActions from "./fine-actions";
@@ -29,6 +30,7 @@ export default async function FinesPage({
 }) {
   const { status = "unpaid" } = await searchParams;
   const supabase = await createClient();
+  const { fine_per_day } = await getSettings();
 
   let query = supabase
     .from("fines")
@@ -67,7 +69,7 @@ export default async function FinesPage({
         </div>
         <div className="rounded-2xl border border-mist-deep bg-paper p-5">
           <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-ink-mute">Fine rate</p>
-          <p className="mt-2 font-display text-3xl font-semibold text-navy-900">{money(5)}<span className="text-base font-normal text-ink-mute">/day</span></p>
+          <p className="mt-2 font-display text-3xl font-semibold text-navy-900">{money(fine_per_day)}<span className="text-base font-normal text-ink-mute">/day</span></p>
         </div>
       </div>
 

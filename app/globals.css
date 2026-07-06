@@ -84,6 +84,21 @@ video {
   font-variant-numeric: tabular-nums;
 }
 
+/* Print: drop the app chrome, show just the report */
+@media print {
+  aside,
+  header,
+  .no-print {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  main {
+    width: 100% !important;
+  }
+}
+
 h1,
 h2,
 h3 {
