@@ -3,6 +3,7 @@
 import { useActionState, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Combobox from "@/components/Combobox";
 import type { Book, BookInput } from "@/lib/types";
 import type { BookFormState } from "./actions";
 
@@ -37,6 +38,7 @@ export default function BookForm({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isbnBusy, setIsbnBusy] = useState(false);
   const [isbnMsg, setIsbnMsg] = useState<string | null>(null);
+  const [category, setCategory] = useState((book?.category ?? "") as string);
 
   function setField(name: string, value: string) {
     const el = formRef.current?.elements.namedItem(name) as
@@ -69,7 +71,8 @@ export default function BookForm({
       setField("author", (info.authors ?? []).join(", "));
       setField("publisher", info.publisher ?? "");
       setField("published_year", (info.publishedDate ?? "").slice(0, 4));
-      setField("category", (info.categories ?? [])[0] ?? "");
+      const cat = (info.categories ?? [])[0];
+      if (cat) setCategory(cat);
       setField("description", info.description ?? "");
       const thumb = info.imageLinks?.thumbnail?.replace("http://", "https://");
       if (thumb && !coverUrl) setCoverUrl(thumb);
@@ -168,10 +171,14 @@ export default function BookForm({
           </div>
           <div>
             <label className={label} htmlFor="category">Category</label>
-            <input id="category" name="category" list="category-list" defaultValue={v("category")} placeholder="e.g. Computer Science" className={field} />
-            <datalist id="category-list">
-              {CATEGORIES.map((c) => <option key={c} value={c} />)}
-            </datalist>
+            <Combobox
+              id="category"
+              name="category"
+              value={category}
+              onChange={setCategory}
+              suggestions={CATEGORIES}
+              placeholder="e.g. Computer Science"
+            />
           </div>
           <div>
             <label className={label} htmlFor="language">Language</label>
