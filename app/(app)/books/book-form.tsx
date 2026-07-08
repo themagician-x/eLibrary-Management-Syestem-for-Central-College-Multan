@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Combobox from "@/components/Combobox";
@@ -30,59 +30,12 @@ export default function BookForm({
   submitLabel: string;
 }) {
   const router = useRouter();
-  const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction, pending] = useActionState(action, {} as BookFormState);
 
   const [coverUrl, setCoverUrl] = useState<string | null>(book?.cover_url ?? null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isbnBusy, setIsbnBusy] = useState(false);
-  const [isbnMsg, setIsbnMsg] = useState<string | null>(null);
   const [category, setCategory] = useState((book?.category ?? "") as string);
-
-  function setField(name: string, value: string) {
-    const el = formRef.current?.elements.namedItem(name) as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | null;
-    if (el && value) el.value = value;
-  }
-
-  async function fetchFromIsbn() {
-    const isbnEl = formRef.current?.elements.namedItem("isbn") as HTMLInputElement | null;
-    const isbn = isbnEl?.value.trim().replace(/[-\s]/g, "");
-    if (!isbn) {
-      setIsbnMsg("Enter an ISBN first.");
-      return;
-    }
-    setIsbnBusy(true);
-    setIsbnMsg(null);
-    try {
-      const res = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=isbn:${encodeURIComponent(isbn)}`
-      );
-      const data = await res.json();
-      const info = data.items?.[0]?.volumeInfo;
-      if (!info) {
-        setIsbnMsg("No match found for that ISBN.");
-        return;
-      }
-      setField("title", info.title ?? "");
-      setField("author", (info.authors ?? []).join(", "));
-      setField("publisher", info.publisher ?? "");
-      setField("published_year", (info.publishedDate ?? "").slice(0, 4));
-      const cat = (info.categories ?? [])[0];
-      if (cat) setCategory(cat);
-      setField("description", info.description ?? "");
-      const thumb = info.imageLinks?.thumbnail?.replace("http://", "https://");
-      if (thumb && !coverUrl) setCoverUrl(thumb);
-      setIsbnMsg("Details filled from Google Books ✓");
-    } catch {
-      setIsbnMsg("Lookup failed — check your connection.");
-    } finally {
-      setIsbnBusy(false);
-    }
-  }
 
   async function onCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -109,7 +62,7 @@ export default function BookForm({
   const v = (k: keyof BookInput) => (book?.[k as keyof Book] ?? "") as string | number;
 
   return (
-    <form ref={formRef} action={formAction} className="grid gap-8 lg:grid-cols-[240px_1fr]">
+    <form action={formAction} className="grid gap-8 lg:grid-cols-[240px_1fr]">
       {/* cover column */}
       <div>
         <span className={label}>Cover</span>
@@ -153,13 +106,7 @@ export default function BookForm({
           </div>
           <div>
             <label className={label} htmlFor="isbn">ISBN</label>
-            <div className="flex gap-2">
-              <input id="isbn" name="isbn" defaultValue={v("isbn")} placeholder="978…" className={field} />
-              <button type="button" onClick={fetchFromIsbn} disabled={isbnBusy} title="Auto-fill from Google Books" className="flex-none rounded-xl border border-navy-900 px-3 text-xs font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream disabled:opacity-60">
-                {isbnBusy ? "…" : "Fetch"}
-              </button>
-            </div>
-            {isbnMsg && <p className="mt-1 text-[0.7rem] text-ink-mute">{isbnMsg}</p>}
+            <input id="isbn" name="isbn" defaultValue={v("isbn")} placeholder="978…" className={field} />
           </div>
           <div>
             <label className={label} htmlFor="publisher">Publisher</label>
