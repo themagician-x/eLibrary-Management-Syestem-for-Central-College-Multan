@@ -6,9 +6,11 @@ import { deleteBook } from "./actions";
 export default function DeleteBookButton({
   id,
   title,
+  onDeleted,
 }: {
   id: string;
   title: string;
+  onDeleted?: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -22,6 +24,7 @@ export default function DeleteBookButton({
           onClick={async () => {
             setBusy(true);
             await deleteBook(id);
+            onDeleted?.();
           }}
           className="rounded-lg bg-danger px-2.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-danger/90 disabled:opacity-60"
         >

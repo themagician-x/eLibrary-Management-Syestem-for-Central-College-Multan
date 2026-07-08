@@ -1,0 +1,181 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import QRCode from "qrcode";
+import { createClient } from "@/lib/supabase/client";
+import type { Book } from "@/lib/types";
+import DeleteBookButton from "./delete-book-button";
+import PrintLabel from "./[id]/print-label";
+
+export default function BookDrawer({
+  book,
+  onClose,
+}: {
+  book: Book | null;
+  onClose: () => void;
+}) {
+  const [current, setCurrent] = useState<Book | null>(null);
+  const [shown, setShown] = useState(false);
+  const [qr, setQr] = useState("");
+  const [reserved, setReserved] = useState<number | null>(null);
+
+  // mount / slide transition (keep `current` while animating out)
+  useEffect(() => {
+    if (book) {
+      setCurrent(book);
+      const r = requestAnimationFrame(() => setShown(true));
+      return () => cancelAnimationFrame(r);
+    }
+    setShown(false);
+    const t = setTimeout(() => setCurrent(null), 300);
+    return () => clearTimeout(t);
+  }, [book]);
+
+  // fetch QR + reservation count for the opened book
+  useEffect(() => {
+    if (!book) return;
+    let alive = true;
+    setQr("");
+    setReserved(null);
+    QRCode.toDataURL(book.id, { margin: 1, width: 240 })
+      .then((d) => alive && setQr(d))
+      .catch(() => {});
+    const supabase = createClient();
+    supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .eq("book_id", book.id)
+      .in("status", ["waiting", "ready"])
+      .then(({ count }) => alive && setReserved(count ?? 0));
+    return () => {
+      alive = false;
+    };
+  }, [book]);
+
+  // esc to close + lock body scroll while open
+  useEffect(() => {
+    if (!book) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [book, onClose]);
+
+  if (!current) return null;
+  const b = current;
+
+  const meta: [string, string | number | null][] = [
+    ["ISBN", b.isbn],
+    ["Publisher", b.publisher],
+    ["Year", b.published_year],
+    ["Category", b.category],
+    ["Language", b.language],
+    ["Shelf", b.shelf],
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={b.title}>
+      {/* overlay */}
+      <div
+        onClick={onClose}
+        className={`absolute inset-0 bg-navy-950/40 transition-opacity duration-300 ${shown ? "opacity-100" : "opacity-0"}`}
+      />
+
+      {/* panel */}
+      <div
+        className={`absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-cream shadow-[0_0_60px_rgba(5,31,66,0.35)] transition-transform duration-300 ${shown ? "translate-x-0" : "translate-x-full"}`}
+      >
+        {/* header */}
+        <div className="flex items-start justify-between gap-3 border-b border-mist-deep px-6 py-5">
+          <div className="min-w-0">
+            <h2 className="font-display text-lg font-semibold leading-snug text-navy-900">{b.title}</h2>
+            <p className="truncate text-sm text-ink-mute">{b.author ?? "Unknown author"}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-9 w-9 flex-none items-center justify-center rounded-lg text-ink-mute transition-colors hover:bg-mist hover:text-navy-900"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        {/* body */}
+        <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+          {/* cover + status */}
+          <div className="flex gap-4">
+            <div className="aspect-[3/4] w-28 flex-none overflow-hidden rounded-xl border border-mist-deep bg-mist">
+              {b.cover_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={b.cover_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center p-3 text-center">
+                  <span className="font-display text-xs font-semibold text-ink-mute">{b.title}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col items-start gap-2 pt-1">
+              <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${b.available_copies > 0 ? "bg-ok-soft text-ok" : "bg-danger-soft text-danger"}`}>
+                {b.available_copies} of {b.total_copies} available
+              </span>
+              {reserved ? (
+                <Link href="/reservations" onClick={onClose} className="inline-block rounded-full bg-gold-100 px-3 py-1 text-xs font-bold text-gold-700 hover:bg-gold-400/40">
+                  {reserved} in queue
+                </Link>
+              ) : null}
+            </div>
+          </div>
+
+          {/* metadata */}
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+            {meta.map(([k, val]) => (
+              <div key={k} className="border-b border-mist pb-3">
+                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">{k}</dt>
+                <dd className="mt-1 text-sm font-semibold text-navy-900">{val || <span className="font-normal text-ink-mute/60">—</span>}</dd>
+              </div>
+            ))}
+          </dl>
+
+          {/* description */}
+          {b.description && (
+            <div>
+              <p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Description</p>
+              <p className="mt-2 text-sm leading-relaxed text-ink-soft">{b.description}</p>
+            </div>
+          )}
+
+          {/* QR / barcode */}
+          <div className="rounded-2xl border border-mist-deep bg-paper p-5">
+            <p className="mb-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Scan code</p>
+            <div className="mx-auto flex h-40 w-40 items-center justify-center">
+              {qr ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={qr} alt="Book QR code" className="h-40 w-40" />
+              ) : (
+                <span className="text-xs text-ink-mute">Generating…</span>
+              )}
+            </div>
+            <p className="mt-3 text-center font-mono text-sm tracking-[0.15em] text-navy-900">{b.barcode}</p>
+            {qr && <PrintLabel qr={qr} title={b.title} barcode={b.barcode ?? ""} />}
+          </div>
+        </div>
+
+        {/* footer actions */}
+        <div className="flex items-center gap-2 border-t border-mist-deep px-6 py-4">
+          <Link
+            href={`/books/${b.id}/edit`}
+            className="flex-1 rounded-xl bg-navy-900 px-4 py-2.5 text-center text-sm font-bold text-cream transition-colors hover:bg-navy-800"
+          >
+            Edit book
+          </Link>
+          <DeleteBookButton id={b.id} title={b.title} onDeleted={onClose} />
+        </div>
+      </div>
+    </div>
+  );
+}
