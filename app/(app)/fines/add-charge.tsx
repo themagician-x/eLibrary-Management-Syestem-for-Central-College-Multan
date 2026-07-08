@@ -4,6 +4,7 @@ import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import AsyncPicker, { type PickOption } from "@/components/AsyncPicker";
+import Select from "@/components/Select";
 import { addCharge } from "./actions";
 
 export default function AddCharge() {
@@ -75,10 +76,15 @@ export default function AddCharge() {
         </div>
         <div>
           <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-ink-soft">Reason</label>
-          <select value={reason} onChange={(e) => setReason(e.target.value as "lost" | "damaged")} className={field}>
-            <option value="lost">Lost book</option>
-            <option value="damaged">Damaged book</option>
-          </select>
+          <Select
+            ariaLabel="Reason"
+            value={reason}
+            onChange={(v) => setReason(v as "lost" | "damaged")}
+            options={[
+              { value: "lost", label: "Lost book" },
+              { value: "damaged", label: "Damaged book" },
+            ]}
+          />
         </div>
         <div className="sm:col-span-2">
           <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-ink-soft">Note (optional)</label>

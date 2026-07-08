@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import Select from "@/components/Select";
 import type { Student } from "@/lib/types";
 import type { StudentFormState } from "./actions";
 
@@ -109,10 +110,16 @@ export default function StudentForm({
           </div>
           <div>
             <label className={label} htmlFor="status">Status</label>
-            <select id="status" name="status" defaultValue={student?.status ?? "active"} className={field}>
-              <option value="active">Active</option>
-              <option value="blocked">Blocked</option>
-            </select>
+            <Select
+              id="status"
+              name="status"
+              ariaLabel="Status"
+              defaultValue={student?.status ?? "active"}
+              options={[
+                { value: "active", label: "Active" },
+                { value: "blocked", label: "Blocked" },
+              ]}
+            />
           </div>
         </div>
 

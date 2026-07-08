@@ -3,6 +3,7 @@ import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import Avatar from "@/components/Avatar";
 import ConfirmDelete from "@/components/ConfirmDelete";
+import Select from "@/components/Select";
 import { createClient } from "@/lib/supabase/server";
 import type { Student } from "@/lib/types";
 import { deleteStudent } from "./actions";
@@ -50,11 +51,18 @@ export default async function StudentsPage({
           <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-mute" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
           <input name="q" defaultValue={q} placeholder="Search name, roll no or email…" className="w-full rounded-xl border border-mist-deep bg-paper py-2.5 pl-10 pr-4 text-sm outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/25" />
         </div>
-        <select name="status" defaultValue={status} className="rounded-xl border border-mist-deep bg-paper px-3 py-2.5 text-sm outline-none focus:border-gold-500">
-          <option value="">All statuses</option>
-          <option value="active">Active</option>
-          <option value="blocked">Blocked</option>
-        </select>
+        <Select
+          name="status"
+          ariaLabel="Filter by status"
+          defaultValue={status}
+          className="w-44"
+          buttonClassName="w-full rounded-xl border bg-paper px-3 py-2.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-gold-500/25"
+          options={[
+            { value: "", label: "All statuses" },
+            { value: "active", label: "Active" },
+            { value: "blocked", label: "Blocked" },
+          ]}
+        />
         <button type="submit" className="rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-cream hover:bg-navy-800">Search</button>
         {filtering && <Link href="/students" className="text-sm font-semibold text-ink-mute hover:text-navy-900">Clear</Link>}
       </form>

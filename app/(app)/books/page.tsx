@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
+import Select from "@/components/Select";
 import { createClient } from "@/lib/supabase/server";
 import type { Book } from "@/lib/types";
 import DeleteBookButton from "./delete-book-button";
@@ -63,10 +64,17 @@ export default async function BooksPage({
             className="w-full rounded-xl border border-mist-deep bg-paper py-2.5 pl-10 pr-4 text-sm outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/25"
           />
         </div>
-        <select name="category" defaultValue={category} className="rounded-xl border border-mist-deep bg-paper px-3 py-2.5 text-sm outline-none focus:border-gold-500">
-          <option value="">All categories</option>
-          {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+        <Select
+          name="category"
+          ariaLabel="Filter by category"
+          defaultValue={category}
+          className="w-48"
+          buttonClassName="w-full rounded-xl border bg-paper px-3 py-2.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-gold-500/25"
+          options={[
+            { value: "", label: "All categories" },
+            ...categories.map((c) => ({ value: c, label: c })),
+          ]}
+        />
         <button type="submit" className="rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-cream hover:bg-navy-800">
           Search
         </button>
