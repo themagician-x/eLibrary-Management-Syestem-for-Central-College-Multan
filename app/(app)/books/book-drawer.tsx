@@ -167,6 +167,7 @@ export default function BookDrawer({
         <div className="flex items-center gap-2 border-t border-mist-deep px-6 py-4">
           <Link
             href={`/books/${b.id}/edit`}
+            onClick={onClose}
             className="flex-1 rounded-xl bg-navy-900 px-4 py-2.5 text-center text-sm font-bold text-cream transition-colors hover:bg-navy-800"
           >
             Edit book

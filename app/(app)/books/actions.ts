@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { generateBarcode } from "@/lib/barcode";
 
@@ -84,7 +83,7 @@ export async function updateBook(
 
   revalidatePath("/books");
   revalidatePath(`/books/${id}`);
-  redirect("/books");
+  return { ok: true };
 }
 
 export async function deleteBook(id: string) {
