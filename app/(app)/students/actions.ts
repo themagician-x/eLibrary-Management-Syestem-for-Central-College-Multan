@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export type StudentFormState = { error?: string; ok?: boolean };
@@ -59,7 +58,7 @@ export async function updateStudent(
 
   revalidatePath("/students");
   revalidatePath(`/students/${id}`);
-  redirect("/students");
+  return { ok: true };
 }
 
 export async function deleteStudent(id: string) {
