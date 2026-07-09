@@ -55,7 +55,11 @@ export default function ReservePanel() {
       setMsg({ err: res.error });
       return;
     }
-    setMsg({ ok: `${student.label} reserved “${book.label}”${res.position ? ` — #${res.position} in queue` : ""}.` });
+    setMsg({
+      ok: res.ready
+        ? `“${book.label}” is ready for pickup by ${student.label}.`
+        : `${student.label} reserved “${book.label}”${res.position ? ` — #${res.position} in queue` : ""}.`,
+    });
     setBook(null);
     setStudent(null);
     startRefresh(() => router.refresh());

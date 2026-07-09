@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings } from "@/lib/settings";
 
-export type ActionResult = { error?: string; position?: number };
+export type ActionResult = { error?: string; position?: number; ready?: boolean };
 
 function revalidate() {
   revalidatePath("/reservations");
@@ -20,7 +20,8 @@ export async function reserveBook(bookId: string, studentId: string): Promise<Ac
   });
   if (error) return { error: error.message };
   revalidate();
-  return { position: Number(data) || undefined };
+  const pos = Number(data);
+  return { position: pos > 0 ? pos : undefined, ready: pos === 0 };
 }
 
 export async function cancelReservation(id: string): Promise<ActionResult> {
