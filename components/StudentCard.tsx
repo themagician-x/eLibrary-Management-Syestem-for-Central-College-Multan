@@ -61,15 +61,26 @@ export default function StudentCard({
       <html>
         <head><title>${escapeHtml(student.name)} — library card</title>
         <style>
-          @page { size: auto; margin: 10mm; }
+          @page { size: A4 portrait; margin: 8mm; }
           * { margin:0; padding:0; box-sizing:border-box; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
               -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-          body { display:flex; justify-content:center; align-items:flex-start; padding:10mm; background:#fff; }
-          .sheet { display:flex; gap:6mm; }
+          body { display:flex; flex-direction:column; align-items:center; padding:6mm; background:#fff; }
+
+          /* on-screen guidance only — never printed */
+          .hint { max-width:150mm; margin-bottom:6mm; padding:3mm 4mm; border:1px solid #d3dbe8; border-radius:2mm;
+                  background:#f4f6fa; color:#3a4a63; font-size:11px; line-height:1.5; }
+          .hint b { color:#06377b; }
+          @media print { .hint { display:none !important; } }
+
+          .sheet { display:flex; gap:4mm; }
+          /* dashed cut guide around each card */
+          .slot { padding:2.5mm; border:0.2mm dashed #c7d1e0; border-radius:4.5mm;
+                  break-inside:avoid; page-break-inside:avoid; }
 
           /* ID-1 portrait — same footprint as a driving licence */
           .card { width:54mm; height:85.6mm; border:0.4mm solid #06377b; border-radius:3mm;
-                  overflow:hidden; display:flex; flex-direction:column; background:#fff; }
+                  overflow:hidden; display:flex; flex-direction:column; background:#fff;
+                  break-inside:avoid; page-break-inside:avoid; }
 
           /* ---------- front ---------- */
           .fhead { background:#06377b; color:#fff; padding:2mm 2.5mm; text-align:center; }
@@ -104,9 +115,14 @@ export default function StudentCard({
                    text-align:center; padding:1.5mm; border-top:0.3mm solid #d3dbe8; line-height:1.5; }
         </style></head>
         <body>
+          <div class="hint">
+            <b>Before printing:</b> set <b>Scale</b> to <b>100%</b> (“Actual size”, not “Fit to page”) and turn
+            <b>off</b> “Headers and footers” — otherwise the card won’t come out at true licence size and the page
+            date/URL will print on the sheet. Cut along the dashed lines and glue the two faces back-to-back.
+          </div>
           <div class="sheet">
             <!-- FRONT -->
-            <div class="card">
+            <div class="slot"><div class="card">
               <div class="fhead">
                 <div class="brand">Central College Library</div>
                 <div class="type">Student Library Card</div>
@@ -123,17 +139,17 @@ export default function StudentCard({
                 <div class="no">${cardNo}</div>
               </div>
               <div class="ffoot">Member since ${memberSince}</div>
-            </div>
+            </div></div>
 
             <!-- BACK -->
-            <div class="card">
+            <div class="slot"><div class="card">
               <div class="bhead">Books on loan</div>
               <table>
                 <thead><tr><th class="n">#</th><th>Book barcode</th><th>Issued</th><th>Due</th></tr></thead>
                 <tbody>${rows}</tbody>
               </table>
               <div class="bfoot">Property of Central College Library<br/>Non-transferable · Report if found</div>
-            </div>
+            </div></div>
           </div>
           <script>window.onload = () => { window.print(); }</script>
         </body>
