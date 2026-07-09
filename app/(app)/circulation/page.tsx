@@ -4,6 +4,7 @@ import PageShell from "@/components/PageShell";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings } from "@/lib/settings";
 import type { LoanWithRefs } from "@/lib/types";
+import BookPeek from "@/components/BookPeek";
 import LoanActions from "./loan-actions";
 
 export const metadata: Metadata = { title: "Circulation" };
@@ -98,10 +99,10 @@ export default async function CirculationPage({
               const d = dueInfo(l.due_at);
               return (
                 <div key={l.id} className={`grid grid-cols-1 gap-3 border-b border-mist px-5 py-3.5 last:border-0 lg:grid-cols-[1.4fr_1.2fr_130px_140px_150px] lg:items-center lg:gap-4 ${d.overdue ? "bg-danger-soft/30" : "bg-paper"}`}>
-                  <Link href={`/books/${l.book?.id}`} className="min-w-0">
-                    <span className="block truncate font-semibold text-navy-900">{l.book?.title ?? "Unknown book"}</span>
+                  <BookPeek bookId={l.book?.id} className="group min-w-0 text-left">
+                    <span className="block truncate font-semibold text-navy-900 group-hover:text-navy-700">{l.book?.title ?? "Unknown book"}</span>
                     <span className="block truncate text-xs text-ink-mute">{l.book?.author ?? ""}{l.renew_count > 0 ? ` · renewed ${l.renew_count}×` : ""}</span>
-                  </Link>
+                  </BookPeek>
                   <Link href={`/students/${l.student?.id}`} className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-navy-900">{l.student?.name ?? "Unknown"}</span>
                     <span className="block truncate text-xs text-ink-mute">{l.student?.roll_no ?? ""}</span>

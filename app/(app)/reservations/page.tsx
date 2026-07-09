@@ -3,6 +3,7 @@ import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import { createClient } from "@/lib/supabase/server";
 import type { ReservationWithRefs } from "@/lib/types";
+import BookPeek from "@/components/BookPeek";
 import ReservationActions from "./reservation-actions";
 
 export const metadata: Metadata = { title: "Reservations" };
@@ -85,10 +86,10 @@ export default async function ReservationsPage({
             </div>
             {rows.map(({ r, position }) => (
               <div key={r.id} className={`grid grid-cols-1 gap-2 border-b border-mist px-5 py-3.5 last:border-0 lg:grid-cols-[1.3fr_1.2fr_150px_120px_160px] lg:items-center lg:gap-4 ${r.status === "ready" ? "bg-ok-soft/30" : "bg-paper"}`}>
-                <Link href={`/books/${r.book?.id}`} className="min-w-0">
-                  <span className="block truncate font-semibold text-navy-900">{r.book?.title ?? "Unknown book"}</span>
+                <BookPeek bookId={r.book?.id} className="group min-w-0 text-left">
+                  <span className="block truncate font-semibold text-navy-900 group-hover:text-navy-700">{r.book?.title ?? "Unknown book"}</span>
                   <span className="block truncate text-xs text-ink-mute">{r.book?.author ?? ""}</span>
-                </Link>
+                </BookPeek>
                 <Link href={`/students/${r.student?.id}`} className="min-w-0">
                   <span className="block truncate text-sm font-semibold text-navy-900">{r.student?.name ?? "Unknown"}</span>
                   <span className="block truncate text-xs text-ink-mute">{r.student?.roll_no ?? ""}</span>
