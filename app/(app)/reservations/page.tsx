@@ -44,7 +44,11 @@ export default async function ReservationsPage({
   const readyCount = list.filter((r) => r.status === "ready").length;
 
   return (
-    <PageShell title="Reservations" subtitle="Holds and the waiting queue.">
+    <PageShell
+      title="Reservations"
+      subtitle="Holds and the waiting queue."
+      badge={`${list.length} ${list.length === 1 ? "hold" : "holds"}`}
+    >
       {!history && <ReservePanel />}
 
       <div className="mt-10">

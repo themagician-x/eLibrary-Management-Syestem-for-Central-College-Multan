@@ -38,10 +38,11 @@ export default async function FinesPage({
     .order("created_at", { ascending: false });
   if (["unpaid", "paid", "waived"].includes(status)) query = query.eq("status", status);
 
-  const [{ data, error }, { data: unpaidRows }, { data: paidRows }] = await Promise.all([
+  const [{ data, error }, { data: unpaidRows }, { data: paidRows }, { count: totalFines }] = await Promise.all([
     query,
     supabase.from("fines").select("amount").eq("status", "unpaid"),
     supabase.from("fines").select("amount").eq("status", "paid"),
+    supabase.from("fines").select("*", { count: "exact", head: true }),
   ]);
 
   const fines = (data ?? []) as unknown as FineWithRefs[];
@@ -56,7 +57,12 @@ export default async function FinesPage({
   ];
 
   return (
-    <PageShell title="Fines" subtitle="Late fees, lost and damaged charges." actions={<AddCharge />}>
+    <PageShell
+      title="Fines"
+      subtitle="Late fees, lost and damaged charges."
+      badge={`${totalFines ?? 0} ${totalFines === 1 ? "charge" : "charges"}`}
+      actions={<AddCharge />}
+    >
       {/* summary */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-danger/25 bg-danger-soft p-5">

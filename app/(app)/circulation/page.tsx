@@ -40,13 +40,20 @@ export default async function CirculationPage({
 
   if (filter === "overdue") query = query.lt("due_at", new Date().toISOString());
 
-  const { data, error } = await query;
+  const [{ data, error }, { count: onLoanCount }] = await Promise.all([
+    query,
+    supabase.from("loans").select("*", { count: "exact", head: true }).is("returned_at", null),
+  ]);
   const loans = (data ?? []) as unknown as LoanWithRefs[];
 
   const overdueCount = loans.filter((l) => new Date(l.due_at).getTime() < Date.now()).length;
 
   return (
-    <PageShell title="Circulation" subtitle="Issue, return and renew books.">
+    <PageShell
+      title="Circulation"
+      subtitle="Issue, return and renew books."
+      badge={`${onLoanCount ?? 0} on loan`}
+    >
       <IssuePanel loanDays={settings.loan_days} maxBooks={settings.max_books} />
 
       {/* current loans */}

@@ -36,6 +36,7 @@ export default async function BooksPage({
     <PageShell
       title="Books"
       subtitle="The library catalogue."
+      badge={`${list.length} ${list.length === 1 ? "book" : "books"}`}
       actions={
         <div className="flex flex-wrap gap-2">
           <Link href="/books/import" className="rounded-xl border border-navy-900 px-4 py-2 text-sm font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream">
@@ -100,9 +101,6 @@ export default async function BooksPage({
         </div>
       ) : (
         <>
-          <p className="mb-4 font-mono text-xs uppercase tracking-wider text-ink-mute">
-            {list.length} {list.length === 1 ? "book" : "books"}
-          </p>
           <BooksTable books={list} />
         </>
       )}
