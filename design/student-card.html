@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Student Library Card — mockup</title>
+<style>
+  @page { size: A4 portrait; margin: 8mm; }
+
+  * { margin:0; padding:0; box-sizing:border-box;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  body { display:flex; flex-direction:column; align-items:center; padding:8mm; background:#f4f6fa; }
+
+  /* on-screen guidance only — never printed */
+  .hint { max-width:150mm; margin-bottom:6mm; padding:3mm 4mm; border:1px solid #d3dbe8;
+          border-radius:2mm; background:#fff; color:#3a4a63; font-size:11px; line-height:1.55; }
+  .hint b { color:#06377b; }
+  @media print { .hint { display:none !important; } body { background:#fff; } }
+
+  /* dashed cut guide */
+  .slot { padding:2.5mm; border:0.2mm dashed #c7d1e0; border-radius:4.5mm; background:#fff;
+          break-inside:avoid; page-break-inside:avoid; }
+
+  /* ---- ID-1 portrait: same footprint as a driving licence ---- */
+  .card { width:54mm; height:85.6mm; border:0.4mm solid #06377b; border-radius:3mm;
+          overflow:hidden; display:flex; flex-direction:column; background:#fff; }
+
+  /* header */
+  .head { background:#06377b; color:#fff; text-align:center; padding:1.8mm 2mm; }
+  .brand { font-size:6.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; }
+  .type  { font-size:5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase;
+           color:#faa61a; margin-top:.4mm; }
+
+  /* identity: details left, QR right */
+  .id { display:flex; gap:2mm; padding:2.5mm; align-items:flex-start; }
+  .info { flex:1; min-width:0; }
+  .name { font-size:9.5px; font-weight:800; color:#06377b; line-height:1.15; }
+  .field { margin-top:1.3mm; }
+  .field .k { display:block; font-size:4.6px; letter-spacing:.7px; text-transform:uppercase; color:#6a778c; }
+  .field .v { display:block; font-size:6.4px; font-weight:700; color:#12203a; line-height:1.25; }
+  .field .v.mono { font-family: ui-monospace, monospace; letter-spacing:.2px; }
+  .pill { display:inline-block; margin-top:1.5mm; padding:.5mm 1.8mm; border-radius:3mm;
+          font-size:5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
+  .pill.ok { background:#dcfce7; color:#15803d; }
+  .pill.no { background:#fee2e2; color:#b91c1c; }
+
+  .qr { flex:none; text-align:center; }
+  .qr img { width:19mm; height:19mm; display:block; }
+  .qr .no { font-family: ui-monospace, monospace; font-size:5.6px; font-weight:700;
+            color:#12203a; margin-top:.5mm; letter-spacing:.3px; }
+
+  /* books on loan */
+  .bhead { background:#e9edf4; color:#6a778c; font-size:5px; font-weight:800; letter-spacing:1px;
+           text-transform:uppercase; padding:1.2mm 2.5mm; border-top:0.2mm solid #d3dbe8; }
+  table { width:100%; border-collapse:collapse; }
+  th { background:#f4f6fa; color:#6a778c; font-size:4.6px; letter-spacing:.4px; text-transform:uppercase;
+       padding:1mm .8mm; text-align:left; }
+  td { font-size:5.6px; color:#12203a; padding:0 .8mm; height:5.5mm; border-top:0.2mm solid #eef1f6; }
+  td.n, th.n { width:4.5mm; text-align:center; color:#6a778c; }
+  .mono { font-family: ui-monospace, monospace; letter-spacing:-.2px; }
+
+  .foot { margin-top:auto; background:#06377b; color:#fff; font-size:4.6px; letter-spacing:.6px;
+          text-transform:uppercase; text-align:center; padding:1.4mm; line-height:1.5; }
+</style>
+</head>
+<body>
+
+  <div class="hint">
+    <b>Mockup — single-sided student library card (54 × 85.6 mm, ID-1 / driving-licence size).</b><br />
+    Before printing: set <b>Scale</b> to <b>100%</b> (“Actual size”, not “Fit to page”) and turn <b>off</b>
+    “Headers and footers”. Cut along the dashed line. This banner never prints.
+  </div>
+
+  <div class="slot">
+    <div class="card">
+
+      <div class="head">
+        <div class="brand">Central College Library</div>
+        <div class="type">Student Library Card</div>
+      </div>
+
+      <div class="id">
+        <div class="info">
+          <div class="name">Fatima Noor</div>
+          <div class="field">
+            <span class="k">Roll no</span>
+            <span class="v mono">2023-CS-002</span>
+          </div>
+          <div class="field">
+            <span class="k">Class / Dept</span>
+            <span class="v">BS Computer Science</span>
+          </div>
+          <span class="pill ok">Active</span>
+        </div>
+        <div class="qr">
+          <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAANwAAADcCAYAAAAbWs+BAAAAAklEQVR4AewaftIAAAReSURBVO3B0ZHgBpYDwcKL9t9lnCJkAPnBw/SsKjP9B5ImDkkzh6SZQ9LMIWnmkDRzSJo5JM0ckmYOSTM/vJQE/astbyThSVveSMKTtryRhCdteSMJ+ldbnhySZg5JM4ekmUPSzCFp5pA0c0iaOSTNHJJmfvhYW/5WSfhSW36jtqy15W+VhK8ckmYOSTOHpJlD0swhaeaQNHNImjkkzfzwByRhrS1rSfhKW54k4SttWUvCWluWDkkzh6SZQ9LMIWnmkDRzSJo5JM0ckmYOSTM/6P9NW76ShCdt0e92SJo5JM0ckmYOSTOHpJlD0swhaeaQNPOD/nOS8KQt+t4haeaQNHNImjkkzRySZg5JM4ekmUPSzCFp5oc/oC3/BUn4Slu+0pbfqC3/6w5JM4ekmUPSzCFp5pA0c0iaOSTNHJJmfvhYEvReW95IwpO2vJGEJ235UhIEh6SZQ9LMIWnmkDRzSJo5JM0ckmYOSTOHpJn0H+iPScJaW/RnHJJmDkkzh6SZQ9LMIWnmkDRzSJo5JM0ckmZ+eCkJb7TlSRLeaMtSEr7Ult8oCU/a8qUkPGnLV5LwRlueJOGNtjw5JM0ckmYOSTOHpJlD0swhaeaQNHNImvnhpbZ8pS1vJOFJW95IwpO2/M3aspaEN9qy1Jbf6JA0c0iaOSTNHJJmDkkzh6SZQ9LMIWnmkDTzw0tJ+Epb1tryJAlfastX2rKUhC8l4W/Vlq8ckmYOSTOHpJlD0swhaeaQNHNImjkkzaT/4ENJ+EpbniThjbZ8JQlfactaEp605W+WhK+05SuHpJlD0swhaeaQNHNImjkkzRySZg5JM4ekmR9+sSQsJeG/oC1PkvBbteVJW76ShDfa8uSQNHNImjkkzRySZg5JM4ekmUPSzCFp5oePteVv1ZYvJWEpCW+0Za0tS0l4oy1P2vKVQ9LMIWnmkDRzSJo5JM0ckmYOSTOHpJlD0swPLyVB/2rLWhK+koSvtOWNJHylLU/a8kYSnrTlK4ekmUPSzCFp5pA0c0iaOSTNHJJmDkkzh6SZHz7Wlr9VEr7UlidJeKMtT5LwRlueJOGNJLzRlq8k4W91SJo5JM0ckmYOSTOHpJlD0swhaeaQNPPDH5CEtbb8Rm15IwlfScJaEp605Y22PEnCG215koQ32vLkkDRzSJo5JM0ckmYOSTOHpJlD0swhaeaQNPOD/me05W+WhDfa8qQtX2nLVw5JM4ekmUPSzCFp5pA0c0iaOSTNHJJmftD/myQ8acsbbfmNkvCVtryRhN+oLU8OSTOHpJlD0swhaeaQNHNImjkkzRySZg5JMz/8AW35L2jLkyS80ZavJOFJW95oy2/Ulq8k4SuHpJlD0swhaeaQNHNImjkkzRySZg5JMz98LAn6VxKetOWNJDxpyxtt+UoSvtKWtSQsHZJmDkkzh6SZQ9LMIWnmkDRzSJo5JM0ckmbSfyBp4pA0c0iaOSTNHJJmDkkzh6SZQ9LMIWnm/wDUrSWk4ikiGgAAAABJRU5ErkJggg==" alt="QR" />
+          <div class="no">2023-CS-002</div>
+        </div>
+      </div>
+
+      <div class="bhead">Books on loan</div>
+      <table>
+        <thead>
+          <tr><th class="n">#</th><th>Book barcode</th><th>Issued</th><th>Due</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="n">1</td><td class="mono">2000000000011</td><td>09 Jul</td><td>23 Jul</td></tr>
+          <tr><td class="n">2</td><td class="mono"></td><td></td><td></td></tr>
+          <tr><td class="n">3</td><td class="mono"></td><td></td><td></td></tr>
+          <tr><td class="n">4</td><td class="mono"></td><td></td><td></td></tr>
+          <tr><td class="n">5</td><td class="mono"></td><td></td><td></td></tr>
+          <tr><td class="n">6</td><td class="mono"></td><td></td><td></td></tr>
+          <tr><td class="n">7</td><td class="mono"></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+
+      <div class="foot">Member since 2026 · Property of Central College Library</div>
+
+    </div>
+  </div>
+
+</body>
+</html>
