@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import type { Book } from "@/lib/types";
 import DeleteButton from "@/components/DeleteButton";
+import TableScroll from "@/components/TableScroll";
 import { deleteBook } from "./actions";
 import BookDrawer from "./book-drawer";
 
@@ -12,10 +13,11 @@ export default function BooksTable({ books }: { books: Book[] }) {
 
   return (
     <>
-      <div className="overflow-x-auto rounded-2xl border border-mist-deep bg-paper">
-        <table className="w-full min-w-[680px] border-collapse text-sm">
+      <TableScroll>
+        {/* border-separate: a sticky <th> drops its border under border-collapse */}
+        <table className="w-full min-w-[680px] border-separate border-spacing-0 text-sm">
           <thead>
-            <tr className="border-b border-mist-deep bg-mist text-left font-mono text-[0.62rem] uppercase tracking-[0.12em] text-ink-mute">
+            <tr className="text-left font-mono text-[0.62rem] uppercase tracking-[0.12em] text-ink-mute [&>th]:sticky [&>th]:top-0 [&>th]:z-10 [&>th]:border-b [&>th]:border-mist-deep [&>th]:bg-mist">
               <th className="px-4 py-3 font-semibold">Book</th>
               <th className="px-4 py-3 font-semibold">Category</th>
               <th className="px-4 py-3 font-semibold">Shelf</th>
@@ -23,12 +25,12 @@ export default function BooksTable({ books }: { books: Book[] }) {
               <th className="px-4 py-3 text-right font-semibold">Actions</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="[&>tr:last-child>td]:border-0">
             {books.map((book) => (
               <tr
                 key={book.id}
                 onClick={() => setSelected(book)}
-                className="group cursor-pointer border-b border-mist transition-colors last:border-0 hover:bg-cream"
+                className="group cursor-pointer transition-colors hover:bg-cream [&>td]:border-b [&>td]:border-mist"
               >
                 <td className="px-4 py-3">
                   <div className="flex min-w-0 items-center gap-3">
@@ -71,7 +73,7 @@ export default function BooksTable({ books }: { books: Book[] }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </TableScroll>
 
       <BookDrawer book={selected} onClose={() => setSelected(null)} />
     </>

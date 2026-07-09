@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { money } from "@/lib/config";
 import { getSettings } from "@/lib/settings";
 import type { FineWithRefs } from "@/lib/types";
+import TableScroll from "@/components/TableScroll";
 import AddCharge from "./add-charge";
 import FineActions from "./fine-actions";
 
@@ -60,11 +61,12 @@ export default async function FinesPage({
     <PageShell
       title="Fines"
       subtitle="Late fees, lost and damaged charges."
+      fill
       badge={`${totalFines ?? 0} ${totalFines === 1 ? "charge" : "charges"}`}
       actions={<AddCharge />}
     >
       {/* summary */}
-      <div className="mb-8 grid gap-4 sm:grid-cols-3">
+      <div className="mb-8 grid shrink-0 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-danger/25 bg-danger-soft p-5">
           <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-danger/80">Outstanding</p>
           <p className="mt-2 font-display text-3xl font-semibold text-danger">{money(outstanding)}</p>
@@ -80,7 +82,7 @@ export default async function FinesPage({
       </div>
 
       {/* filter tabs */}
-      <div className="mb-5 flex flex-wrap items-center gap-1 rounded-xl border border-mist-deep bg-paper p-1 text-sm font-semibold sm:w-fit">
+      <div className="mb-5 flex shrink-0 flex-wrap items-center gap-1 rounded-xl border border-mist-deep bg-paper p-1 text-sm font-semibold sm:w-fit">
         {tabs.map((t) => (
           <Link key={t.key} href={`/fines?status=${t.key}`} className={`rounded-lg px-3.5 py-1.5 ${status === t.key ? "bg-navy-900 text-cream" : "text-ink-soft hover:bg-mist"}`}>
             {t.label}
@@ -102,8 +104,8 @@ export default async function FinesPage({
           <p className="mt-1.5 text-sm text-ink-mute">Late fees are added automatically when overdue books are returned.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-mist-deep">
-          <div className="hidden grid-cols-[1.3fr_1fr_100px_110px_190px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
+        <TableScroll>
+          <div className="sticky top-0 z-10 hidden grid-cols-[1.3fr_1fr_100px_110px_190px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
             <span>Student</span><span>Reason</span><span>Amount</span><span>Date</span><span className="text-right">Status / Actions</span>
           </div>
           {fines.map((f) => (
@@ -126,7 +128,7 @@ export default async function FinesPage({
               </div>
             </div>
           ))}
-        </div>
+        </TableScroll>
       )}
     </PageShell>
   );

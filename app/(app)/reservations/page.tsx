@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { ReservationWithRefs } from "@/lib/types";
 import BookPeek from "@/components/BookPeek";
 import StudentPeek from "@/components/StudentPeek";
+import TableScroll from "@/components/TableScroll";
 import ReservationActions from "./reservation-actions";
 
 export const metadata: Metadata = { title: "Reservations" };
@@ -48,6 +49,7 @@ export default async function ReservationsPage({
     <PageShell
       title="Reservations"
       subtitle="Holds and the waiting queue."
+      fill
       badge={`${list.length} ${list.length === 1 ? "hold" : "holds"}`}
       actions={
         <Link href="/reservations/new" className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">
@@ -55,8 +57,8 @@ export default async function ReservationsPage({
         </Link>
       }
     >
-      <div>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold text-navy-900">
             {history ? "Reservation history" : "Active holds"}
             {!history && readyCount > 0 && (
@@ -81,8 +83,8 @@ export default async function ReservationsPage({
             <p className="mt-1.5 text-sm text-ink-mute">{history ? "Fulfilled and cancelled holds will appear here." : "Place a hold above for a book that's currently out."}</p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-mist-deep">
-            <div className="hidden grid-cols-[1.3fr_1.2fr_150px_120px_160px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
+          <TableScroll>
+            <div className="sticky top-0 z-10 hidden grid-cols-[1.3fr_1.2fr_150px_120px_160px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
               <span>Book</span><span>Student</span><span>Status</span><span>Reserved</span><span className="text-right">Actions</span>
             </div>
             {rows.map(({ r, position }) => (
@@ -112,7 +114,7 @@ export default async function ReservationsPage({
                 </div>
               </div>
             ))}
-          </div>
+          </TableScroll>
         )}
       </div>
     </PageShell>

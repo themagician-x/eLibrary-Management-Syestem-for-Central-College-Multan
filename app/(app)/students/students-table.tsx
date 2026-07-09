@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import DeleteButton from "@/components/DeleteButton";
+import TableScroll from "@/components/TableScroll";
 import StudentDrawer from "@/components/StudentDrawer";
 import type { Student } from "@/lib/types";
 import { deleteStudent } from "./actions";
@@ -13,8 +14,8 @@ export default function StudentsTable({ students }: { students: Student[] }) {
 
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-mist-deep">
-        <div className="hidden grid-cols-[1fr_140px_140px_100px_80px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute sm:grid">
+      <TableScroll>
+        <div className="sticky top-0 z-10 hidden grid-cols-[1fr_140px_140px_100px_80px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute sm:grid">
           <span>Student</span><span>Roll no</span><span>Class / Dept</span><span>Status</span><span className="text-right">Actions</span>
         </div>
         {students.map((s) => (
@@ -43,7 +44,7 @@ export default function StudentsTable({ students }: { students: Student[] }) {
             </span>
           </div>
         ))}
-      </div>
+      </TableScroll>
 
       <StudentDrawer student={selected} onClose={() => setSelected(null)} />
     </>

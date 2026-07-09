@@ -11,9 +11,9 @@ export const metadata: Metadata = { title: "Books" };
 export default async function BooksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; shelf?: string; availability?: string }>;
 }) {
-  const { q = "", category = "" } = await searchParams;
+  const { q = "", category = "", shelf = "", availability = "" } = await searchParams;
   const supabase = await createClient();
 
   let query = supabase.from("books").select("*").order("created_at", { ascending: false });
@@ -22,20 +22,28 @@ export default async function BooksPage({
     query = query.or(`title.ilike.%${term}%,author.ilike.%${term}%,isbn.ilike.%${term}%`);
   }
   if (category) query = query.eq("category", category);
+  if (shelf) query = query.eq("shelf", shelf);
+  if (availability === "available") query = query.gt("available_copies", 0);
+  else if (availability === "out") query = query.eq("available_copies", 0);
 
   const { data: books, error } = await query;
 
-  // distinct categories for the filter
-  const { data: catRows } = await supabase.from("books").select("category").not("category", "is", null);
-  const categories = [...new Set((catRows ?? []).map((r) => r.category).filter(Boolean))].sort() as string[];
+  // distinct categories and shelves for the filters — read from the whole
+  // catalogue, not the filtered page, so the options don't vanish as you narrow
+  const { data: facetRows } = await supabase.from("books").select("category,shelf");
+  const uniq = (key: "category" | "shelf") =>
+    [...new Set((facetRows ?? []).map((r) => r[key]).filter(Boolean))].sort() as string[];
+  const categories = uniq("category");
+  const shelves = uniq("shelf");
 
   const list = (books ?? []) as Book[];
-  const filtering = Boolean(q || category);
+  const filtering = Boolean(q || category || shelf || availability);
 
   return (
     <PageShell
       title="Books"
       subtitle="The library catalogue."
+      fill
       badge={`${list.length} ${list.length === 1 ? "book" : "books"}`}
       actions={
         <div className="flex flex-wrap gap-2">
@@ -59,15 +67,38 @@ export default async function BooksPage({
         basePath="/books"
         q={q}
         placeholder="Search title, author or ISBN…"
-        filter={{
-          name: "category",
-          value: category,
-          ariaLabel: "Filter by category",
-          options: [
-            { value: "", label: "All categories" },
-            ...categories.map((c) => ({ value: c, label: c })),
-          ],
-        }}
+        filters={[
+          {
+            name: "category",
+            value: category,
+            ariaLabel: "Filter by category",
+            options: [
+              { value: "", label: "All categories" },
+              ...categories.map((c) => ({ value: c, label: c })),
+            ],
+          },
+          {
+            name: "shelf",
+            value: shelf,
+            ariaLabel: "Filter by shelf",
+            width: "w-40",
+            options: [
+              { value: "", label: "All shelves" },
+              ...shelves.map((s) => ({ value: s, label: s })),
+            ],
+          },
+          {
+            name: "availability",
+            value: availability,
+            ariaLabel: "Filter by availability",
+            width: "w-44",
+            options: [
+              { value: "", label: "Any availability" },
+              { value: "available", label: "Available" },
+              { value: "out", label: "All copies out" },
+            ],
+          },
+        ]}
       />
 
       {/* results */}
@@ -86,9 +117,7 @@ export default async function BooksPage({
           )}
         </div>
       ) : (
-        <>
-          <BooksTable books={list} />
-        </>
+        <BooksTable books={list} />
       )}
     </PageShell>
   );

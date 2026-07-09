@@ -11,9 +11,9 @@ export const metadata: Metadata = { title: "Students" };
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; dept?: string }>;
 }) {
-  const { q = "", status = "" } = await searchParams;
+  const { q = "", status = "", dept = "" } = await searchParams;
   const supabase = await createClient();
 
   let query = supabase.from("students").select("*").order("created_at", { ascending: false });
@@ -22,15 +22,23 @@ export default async function StudentsPage({
     query = query.or(`name.ilike.%${t}%,roll_no.ilike.%${t}%,email.ilike.%${t}%`);
   }
   if (status === "active" || status === "blocked") query = query.eq("status", status);
+  if (dept) query = query.eq("class_dept", dept);
 
   const { data, error } = await query;
+
+  // distinct departments read from the whole roll, not the filtered page, so
+  // the options don't vanish as you narrow
+  const { data: deptRows } = await supabase.from("students").select("class_dept");
+  const depts = [...new Set((deptRows ?? []).map((r) => r.class_dept).filter(Boolean))].sort() as string[];
+
   const list = (data ?? []) as Student[];
-  const filtering = Boolean(q || status);
+  const filtering = Boolean(q || status || dept);
 
   return (
     <PageShell
       title="Students"
       subtitle="Registered student records."
+      fill
       badge={`${list.length} ${list.length === 1 ? "student" : "students"}`}
       actions={
         <Link href="/students/new" className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">
@@ -49,17 +57,29 @@ export default async function StudentsPage({
         basePath="/students"
         q={q}
         placeholder="Search name, roll no or email…"
-        filter={{
-          name: "status",
-          value: status,
-          ariaLabel: "Filter by status",
-          width: "w-44",
-          options: [
-            { value: "", label: "All statuses" },
-            { value: "active", label: "Active" },
-            { value: "blocked", label: "Blocked" },
-          ],
-        }}
+        filters={[
+          {
+            name: "status",
+            value: status,
+            ariaLabel: "Filter by status",
+            width: "w-40",
+            options: [
+              { value: "", label: "All statuses" },
+              { value: "active", label: "Active" },
+              { value: "blocked", label: "Blocked" },
+            ],
+          },
+          {
+            name: "dept",
+            value: dept,
+            ariaLabel: "Filter by class or department",
+            width: "w-56",
+            options: [
+              { value: "", label: "All classes / depts" },
+              ...depts.map((d) => ({ value: d, label: d })),
+            ],
+          },
+        ]}
       />
 
       {list.length === 0 ? (

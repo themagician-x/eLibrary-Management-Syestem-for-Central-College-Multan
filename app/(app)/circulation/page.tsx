@@ -6,6 +6,7 @@ import { getSettings } from "@/lib/settings";
 import type { LoanWithRefs } from "@/lib/types";
 import BookPeek from "@/components/BookPeek";
 import StudentPeek from "@/components/StudentPeek";
+import TableScroll from "@/components/TableScroll";
 import LoanActions from "./loan-actions";
 
 export const metadata: Metadata = { title: "Circulation" };
@@ -53,6 +54,7 @@ export default async function CirculationPage({
     <PageShell
       title="Circulation"
       subtitle="Issue, return and renew books."
+      fill
       badge={`${onLoanCount ?? 0} on loan`}
       actions={
         <Link href="/circulation/issue" className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">
@@ -61,8 +63,8 @@ export default async function CirculationPage({
       }
     >
       {/* current loans */}
-      <div>
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        <div className="mb-4 flex shrink-0 flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold text-navy-900">
             {filter === "overdue" ? "Overdue books" : "Books on loan"}
           </h2>
@@ -92,8 +94,8 @@ export default async function CirculationPage({
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-mist-deep">
-            <div className="hidden grid-cols-[1.4fr_1.2fr_130px_140px_150px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
+          <TableScroll>
+            <div className="sticky top-0 z-10 hidden grid-cols-[1.4fr_1.2fr_130px_140px_150px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
               <span>Book</span><span>Student</span><span>Issued</span><span>Due</span><span className="text-right">Actions</span>
             </div>
             {loans.map((l) => {
@@ -116,7 +118,7 @@ export default async function CirculationPage({
                 </div>
               );
             })}
-          </div>
+          </TableScroll>
         )}
       </div>
     </PageShell>
