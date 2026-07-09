@@ -10,7 +10,8 @@ export default function ReservePanel() {
   const router = useRouter();
   const [book, setBook] = useState<PickOption | null>(null);
   const [student, setStudent] = useState<PickOption | null>(null);
-  const [pending, start] = useTransition();
+  const [pending, setPending] = useState(false);
+  const [, startRefresh] = useTransition();
   const [msg, setMsg] = useState<{ ok?: string; err?: string } | null>(null);
 
   const searchBooks = useCallback(async (term: string): Promise<PickOption[]> => {
@@ -44,20 +45,20 @@ export default function ReservePanel() {
     }));
   }, []);
 
-  function submit() {
+  async function submit() {
     if (!book || !student) return;
     setMsg(null);
-    start(async () => {
-      const res = await reserveBook(book.id, student.id);
-      if (res.error) {
-        setMsg({ err: res.error });
-      } else {
-        setMsg({ ok: `${student.label} reserved “${book.label}”${res.position ? ` — #${res.position} in queue` : ""}.` });
-        setBook(null);
-        setStudent(null);
-        router.refresh();
-      }
-    });
+    setPending(true);
+    const res = await reserveBook(book.id, student.id);
+    setPending(false);
+    if (res.error) {
+      setMsg({ err: res.error });
+      return;
+    }
+    setMsg({ ok: `${student.label} reserved “${book.label}”${res.position ? ` — #${res.position} in queue` : ""}.` });
+    setBook(null);
+    setStudent(null);
+    startRefresh(() => router.refresh());
   }
 
   return (
