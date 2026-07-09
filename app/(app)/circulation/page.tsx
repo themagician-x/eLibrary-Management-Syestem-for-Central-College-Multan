@@ -103,7 +103,7 @@ export default async function CirculationPage({
                     <span className="block truncate font-semibold text-navy-900 group-hover:text-navy-700">{l.book?.title ?? "Unknown book"}</span>
                     <span className="block truncate text-xs text-ink-mute">{l.book?.author ?? ""}{l.renew_count > 0 ? ` · renewed ${l.renew_count}×` : ""}</span>
                   </BookPeek>
-                  <Link href={`/students/${l.student?.id}`} className="min-w-0">
+                  <Link href={`/students/${l.student?.id}`} className="min-w-0 cursor-pointer">
                     <span className="block truncate text-sm font-semibold text-navy-900">{l.student?.name ?? "Unknown"}</span>
                     <span className="block truncate text-xs text-ink-mute">{l.student?.roll_no ?? ""}</span>
                   </Link>

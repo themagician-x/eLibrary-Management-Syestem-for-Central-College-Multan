@@ -90,7 +90,7 @@ export default async function ReservationsPage({
                   <span className="block truncate font-semibold text-navy-900 group-hover:text-navy-700">{r.book?.title ?? "Unknown book"}</span>
                   <span className="block truncate text-xs text-ink-mute">{r.book?.author ?? ""}</span>
                 </BookPeek>
-                <Link href={`/students/${r.student?.id}`} className="min-w-0">
+                <Link href={`/students/${r.student?.id}`} className="min-w-0 cursor-pointer">
                   <span className="block truncate text-sm font-semibold text-navy-900">{r.student?.name ?? "Unknown"}</span>
                   <span className="block truncate text-xs text-ink-mute">{r.student?.roll_no ?? ""}</span>
                 </Link>

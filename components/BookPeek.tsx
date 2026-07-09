@@ -30,7 +30,7 @@ export default function BookPeek({
 
   return (
     <>
-      <button type="button" onClick={open} className={className} disabled={!bookId}>
+      <button type="button" onClick={open} disabled={!bookId} className={`cursor-pointer disabled:cursor-default ${className ?? ""}`}>
         {children}
       </button>
       <BookDrawer book={book} onClose={() => setBook(null)} />

@@ -41,6 +41,13 @@ html {
   overflow-x: hidden;
 }
 
+/* Tailwind v4 no longer defaults buttons to a pointer cursor — restore it */
+button:not(:disabled),
+[role="button"]:not(:disabled),
+label[for] {
+  cursor: pointer;
+}
+
 body {
   background: var(--color-cream);
   color: var(--color-ink);
