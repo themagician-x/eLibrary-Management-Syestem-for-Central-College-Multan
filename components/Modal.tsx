@@ -15,11 +15,15 @@ export default function Modal({
   subtitle,
   children,
   maxWidthClass = "lg:max-w-3xl",
+  overflowVisible = false,
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
   maxWidthClass?: string;
+  // let short forms' popovers (async pickers) spill past the card instead of
+  // being clipped by the scroll area
+  overflowVisible?: boolean;
 }) {
   const router = useRouter();
   const dirtyRef = useRef(false);
@@ -83,7 +87,7 @@ export default function Modal({
             <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
+        <div className={`flex-1 px-6 py-6 ${overflowVisible ? "" : "overflow-y-auto overscroll-contain"}`}>
           <ModalProvider value={ctx}>{children}</ModalProvider>
         </div>
       </div>
