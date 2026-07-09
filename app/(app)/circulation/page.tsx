@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSettings } from "@/lib/settings";
 import type { LoanWithRefs } from "@/lib/types";
 import BookPeek from "@/components/BookPeek";
+import StudentPeek from "@/components/StudentPeek";
 import LoanActions from "./loan-actions";
 
 export const metadata: Metadata = { title: "Circulation" };
@@ -103,10 +104,10 @@ export default async function CirculationPage({
                     <span className="block truncate font-semibold text-navy-900 group-hover:text-navy-700">{l.book?.title ?? "Unknown book"}</span>
                     <span className="block truncate text-xs text-ink-mute">{l.book?.author ?? ""}{l.renew_count > 0 ? ` · renewed ${l.renew_count}×` : ""}</span>
                   </BookPeek>
-                  <Link href={`/students/${l.student?.id}`} className="min-w-0 cursor-pointer">
-                    <span className="block truncate text-sm font-semibold text-navy-900">{l.student?.name ?? "Unknown"}</span>
+                  <StudentPeek studentId={l.student?.id} className="group min-w-0 text-left">
+                    <span className="block truncate text-sm font-semibold text-navy-900 group-hover:text-navy-700">{l.student?.name ?? "Unknown"}</span>
                     <span className="block truncate text-xs text-ink-mute">{l.student?.roll_no ?? ""}</span>
-                  </Link>
+                  </StudentPeek>
                   <span className="text-sm text-ink-soft">{fmt(l.issued_at)}</span>
                   <span><span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.68rem] font-bold ${d.cls}`}>{d.label}</span></span>
                   <div className="lg:justify-self-end">

@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
-import Avatar from "@/components/Avatar";
-import DeleteButton from "@/components/DeleteButton";
 import SearchToolbar from "@/components/SearchToolbar";
+import StudentsTable from "./students-table";
 import { createClient } from "@/lib/supabase/server";
 import type { Student } from "@/lib/types";
-import { deleteStudent } from "./actions";
 
 export const metadata: Metadata = { title: "Students" };
 
@@ -71,35 +69,7 @@ export default async function StudentsPage({
           {!filtering && <Link href="/students/new" className="mt-5 inline-block rounded-xl bg-navy-900 px-5 py-2.5 text-sm font-bold text-cream hover:bg-navy-800">+ Add your first student</Link>}
         </div>
       ) : (
-        <>
-          <div className="overflow-hidden rounded-2xl border border-mist-deep">
-            <div className="hidden grid-cols-[1fr_140px_140px_100px_80px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute sm:grid">
-              <span>Student</span><span>Roll no</span><span>Class / Dept</span><span>Status</span><span className="text-right">Actions</span>
-            </div>
-            {list.map((s) => (
-              <div key={s.id} className="grid grid-cols-[1fr_auto] items-center gap-4 border-b border-mist bg-paper px-5 py-3 last:border-0 sm:grid-cols-[1fr_140px_140px_100px_80px]">
-                <Link href={`/students/${s.id}`} className="flex min-w-0 items-center gap-3">
-                  <Avatar name={s.name} src={s.photo_url} size={40} />
-                  <span className="min-w-0">
-                    <span className="block truncate font-semibold text-navy-900">{s.name}</span>
-                    <span className="block truncate text-xs text-ink-mute">{s.email ?? "No email"}</span>
-                  </span>
-                </Link>
-                <span className="hidden font-mono text-sm text-ink-soft sm:block">{s.roll_no ?? "—"}</span>
-                <span className="hidden truncate text-sm text-ink-soft sm:block">{s.class_dept ?? "—"}</span>
-                <span className="hidden sm:block">
-                  <span className={`rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${s.status === "active" ? "bg-ok-soft text-ok" : "bg-danger-soft text-danger"}`}>{s.status}</span>
-                </span>
-                <span className="flex items-center justify-end gap-1">
-                  <Link href={`/students/${s.id}/edit`} aria-label={`Edit ${s.name}`} title="Edit" className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-mute transition-colors hover:bg-mist hover:text-navy-900">
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="M13.5 6.5l3 3" /></svg>
-                  </Link>
-                  <DeleteButton onDelete={deleteStudent.bind(null, s.id)} name={s.name} title="Delete student" />
-                </span>
-              </div>
-            ))}
-          </div>
-        </>
+        <StudentsTable students={list} />
       )}
     </PageShell>
   );
