@@ -53,16 +53,13 @@ export default function BookDrawer({
     };
   }, [book]);
 
-  // esc to close + lock body scroll while open
+  // esc to close (background scroll is left untouched so the sticky sidebar
+  // doesn't jump; the drawer contains its own scroll instead)
   useEffect(() => {
     if (!book) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
+    return () => document.removeEventListener("keydown", onKey);
   }, [book, onClose]);
 
   if (!current) return null;
@@ -106,7 +103,7 @@ export default function BookDrawer({
         </div>
 
         {/* body */}
-        <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+        <div className="flex-1 space-y-6 overflow-y-auto overscroll-contain px-6 py-5">
           {/* cover */}
           <div>
             <div className="mx-auto aspect-[3/4] w-52 max-w-full overflow-hidden rounded-2xl border border-mist-deep bg-mist shadow-[0_12px_32px_rgba(5,31,66,0.16)]">
