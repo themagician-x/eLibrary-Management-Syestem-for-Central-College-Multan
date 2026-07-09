@@ -83,10 +83,13 @@ export default async function ReservationsPage({
             <p className="mt-1.5 text-sm text-ink-mute">{history ? "Fulfilled and cancelled holds will appear here." : "Place a hold above for a book that's currently out."}</p>
           </div>
         ) : (
-          <TableScroll>
-            <div className="sticky top-0 z-10 hidden grid-cols-[1.3fr_1.2fr_150px_120px_160px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
-              <span>Book</span><span>Student</span><span>Status</span><span>Reserved</span><span className="text-right">Actions</span>
-            </div>
+          <TableScroll
+            header={
+              <div className="hidden grid-cols-[1.3fr_1.2fr_150px_120px_160px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
+                <span>Book</span><span>Student</span><span>Status</span><span>Reserved</span><span className="text-right">Actions</span>
+              </div>
+            }
+          >
             {rows.map(({ r, position }) => (
               <div key={r.id} className={`grid grid-cols-1 gap-2 border-b border-mist px-5 py-3.5 last:border-0 lg:grid-cols-[1.3fr_1.2fr_150px_120px_160px] lg:items-center lg:gap-4 ${r.status === "ready" ? "bg-ok-soft/30" : "bg-paper"}`}>
                 <BookPeek bookId={r.book?.id} className="group min-w-0 text-left">

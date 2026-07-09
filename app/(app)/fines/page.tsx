@@ -6,7 +6,6 @@ import { money } from "@/lib/config";
 import { getSettings } from "@/lib/settings";
 import type { FineWithRefs } from "@/lib/types";
 import TableScroll from "@/components/TableScroll";
-import AddCharge from "./add-charge";
 import FineActions from "./fine-actions";
 
 export const metadata: Metadata = { title: "Fines" };
@@ -63,7 +62,11 @@ export default async function FinesPage({
       subtitle="Late fees, lost and damaged charges."
       fill
       badge={`${totalFines ?? 0} ${totalFines === 1 ? "charge" : "charges"}`}
-      actions={<AddCharge />}
+      actions={
+        <Link href="/fines/new" className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">
+          + Add charge
+        </Link>
+      }
     >
       {/* summary */}
       <div className="mb-8 grid shrink-0 gap-4 sm:grid-cols-3">
@@ -82,9 +85,9 @@ export default async function FinesPage({
       </div>
 
       {/* filter tabs */}
-      <div className="mb-5 flex shrink-0 flex-wrap items-center gap-1 rounded-xl border border-mist-deep bg-paper p-1 text-sm font-semibold sm:w-fit">
+      <div className="mb-5 flex w-full shrink-0 items-center gap-1 rounded-xl border border-mist-deep bg-paper p-1 text-sm font-semibold">
         {tabs.map((t) => (
-          <Link key={t.key} href={`/fines?status=${t.key}`} className={`rounded-lg px-3.5 py-1.5 ${status === t.key ? "bg-navy-900 text-cream" : "text-ink-soft hover:bg-mist"}`}>
+          <Link key={t.key} href={`/fines?status=${t.key}`} className={`flex-1 rounded-lg px-3.5 py-1.5 text-center ${status === t.key ? "bg-navy-900 text-cream" : "text-ink-soft hover:bg-mist"}`}>
             {t.label}
           </Link>
         ))}
@@ -104,10 +107,13 @@ export default async function FinesPage({
           <p className="mt-1.5 text-sm text-ink-mute">Late fees are added automatically when overdue books are returned.</p>
         </div>
       ) : (
-        <TableScroll>
-          <div className="sticky top-0 z-10 hidden grid-cols-[1.3fr_1fr_100px_110px_190px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
-            <span>Student</span><span>Reason</span><span>Amount</span><span>Date</span><span className="text-right">Status / Actions</span>
-          </div>
+        <TableScroll
+          header={
+            <div className="hidden grid-cols-[1.3fr_1fr_100px_110px_190px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
+              <span>Student</span><span>Reason</span><span>Amount</span><span>Date</span><span className="text-right">Status / Actions</span>
+            </div>
+          }
+        >
           {fines.map((f) => (
             <div key={f.id} className="grid grid-cols-1 gap-2 border-b border-mist bg-paper px-5 py-3.5 last:border-0 lg:grid-cols-[1.3fr_1fr_100px_110px_190px] lg:items-center lg:gap-4">
               <Link href={`/students/${f.student?.id}`} className="min-w-0">

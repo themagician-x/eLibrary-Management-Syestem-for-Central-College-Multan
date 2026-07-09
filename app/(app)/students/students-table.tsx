@@ -14,10 +14,13 @@ export default function StudentsTable({ students }: { students: Student[] }) {
 
   return (
     <>
-      <TableScroll>
-        <div className="sticky top-0 z-10 hidden grid-cols-[1fr_140px_140px_100px_80px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute sm:grid">
-          <span>Student</span><span>Roll no</span><span>Class / Dept</span><span>Status</span><span className="text-right">Actions</span>
-        </div>
+      <TableScroll
+        header={
+          <div className="hidden grid-cols-[1fr_140px_140px_100px_80px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute sm:grid">
+            <span>Student</span><span>Roll no</span><span>Class / Dept</span><span>Status</span><span className="text-right">Actions</span>
+          </div>
+        }
+      >
         {students.map((s) => (
           <div
             key={s.id}

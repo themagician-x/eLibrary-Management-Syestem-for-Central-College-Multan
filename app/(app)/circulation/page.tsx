@@ -94,10 +94,13 @@ export default async function CirculationPage({
             </p>
           </div>
         ) : (
-          <TableScroll>
-            <div className="sticky top-0 z-10 hidden grid-cols-[1.4fr_1.2fr_130px_140px_150px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
-              <span>Book</span><span>Student</span><span>Issued</span><span>Due</span><span className="text-right">Actions</span>
-            </div>
+          <TableScroll
+            header={
+              <div className="hidden grid-cols-[1.4fr_1.2fr_130px_140px_150px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
+                <span>Book</span><span>Student</span><span>Issued</span><span>Due</span><span className="text-right">Actions</span>
+              </div>
+            }
+          >
             {loans.map((l) => {
               const d = dueInfo(l.due_at);
               return (

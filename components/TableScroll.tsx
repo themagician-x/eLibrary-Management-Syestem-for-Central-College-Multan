@@ -1,25 +1,26 @@
 import type { ReactNode } from "react";
 
 /**
- * Scroll box for a list/table. On desktop (inside a `fill` PageShell) it takes
- * the leftover height and scrolls its own rows under a sticky header, so the
- * page chrome stays put. Below `lg` it just scrolls sideways and the page
- * scrolls as usual.
+ * Scroll box for a list. The header sits *outside* the scrolling area, so the
+ * scrollbar runs alongside the rows only and never beside the header.
  *
- * Header rows inside must carry `sticky top-0 z-10` and an opaque background.
+ * On desktop (inside a `fill` PageShell) the box shrinks to fit its rows and
+ * only scrolls once they'd overflow the leftover height — a short list keeps a
+ * short box. Below `lg` the page scrolls as usual.
  */
 export default function TableScroll({
+  header,
   children,
   className = "",
 }: {
+  header?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <div
-      className={`overflow-auto overscroll-contain rounded-2xl border border-mist-deep bg-paper lg:min-h-0 lg:flex-1 ${className}`}
-    >
-      {children}
+    <div className={`flex min-h-0 flex-col overflow-hidden rounded-2xl border border-mist-deep bg-paper ${className}`}>
+      {header && <div className="flex-none">{header}</div>}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
     </div>
   );
 }
