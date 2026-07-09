@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import QRCode from "qrcode";
 import PageShell from "@/components/PageShell";
 import { createClient } from "@/lib/supabase/server";
 import type { Book } from "@/lib/types";
 import DeleteButton from "@/components/DeleteButton";
+import BookLabel from "@/components/BookLabel";
 import { deleteBook } from "../actions";
-import PrintLabel from "./print-label";
 
 export const metadata: Metadata = { title: "Book" };
 
@@ -27,8 +26,6 @@ export default async function BookDetailPage({
     .select("*", { count: "exact", head: true })
     .eq("book_id", id)
     .in("status", ["waiting", "ready"]);
-
-  const qr = await QRCode.toDataURL(book.id, { margin: 1, width: 240 });
 
   const meta: [string, string | number | null][] = [
     ["Author", book.author],
@@ -93,14 +90,8 @@ export default async function BookDetailPage({
           )}
         </div>
 
-        {/* QR / barcode label */}
-        <div className="rounded-2xl border border-mist-deep bg-paper p-5">
-          <p className="mb-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Scan code</p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qr} alt="Book QR code" className="mx-auto h-40 w-40" />
-          <p className="mt-3 text-center font-mono text-sm tracking-[0.15em] text-navy-900">{book.barcode}</p>
-          <PrintLabel qr={qr} title={book.title} barcode={book.barcode ?? ""} />
-        </div>
+        {/* barcode label */}
+        <BookLabel value={book.barcode ?? ""} title={book.title} shelf={book.shelf} />
       </div>
     </PageShell>
   );

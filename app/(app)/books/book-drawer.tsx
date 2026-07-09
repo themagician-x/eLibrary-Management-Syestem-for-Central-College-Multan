@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import type { Book } from "@/lib/types";
 import DeleteButton from "@/components/DeleteButton";
+import BookLabel from "@/components/BookLabel";
 import { deleteBook } from "./actions";
-import PrintLabel from "./[id]/print-label";
 
 export default function BookDrawer({
   book,
@@ -18,7 +17,6 @@ export default function BookDrawer({
 }) {
   const [current, setCurrent] = useState<Book | null>(null);
   const [shown, setShown] = useState(false);
-  const [qr, setQr] = useState("");
   const [reserved, setReserved] = useState<number | null>(null);
 
   // mount / slide transition (keep `current` while animating out)
@@ -33,15 +31,11 @@ export default function BookDrawer({
     return () => clearTimeout(t);
   }, [book]);
 
-  // fetch QR + reservation count for the opened book
+  // fetch reservation count for the opened book
   useEffect(() => {
     if (!book) return;
     let alive = true;
-    setQr("");
     setReserved(null);
-    QRCode.toDataURL(book.id, { margin: 1, width: 240 })
-      .then((d) => alive && setQr(d))
-      .catch(() => {});
     const supabase = createClient();
     supabase
       .from("reservations")
@@ -147,20 +141,8 @@ export default function BookDrawer({
             </div>
           )}
 
-          {/* QR / barcode */}
-          <div className="rounded-2xl border border-mist-deep bg-paper p-5">
-            <p className="mb-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Scan code</p>
-            <div className="mx-auto flex h-40 w-40 items-center justify-center">
-              {qr ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={qr} alt="Book QR code" className="h-40 w-40" />
-              ) : (
-                <span className="text-xs text-ink-mute">Generating…</span>
-              )}
-            </div>
-            <p className="mt-3 text-center font-mono text-sm tracking-[0.15em] text-navy-900">{b.barcode}</p>
-            {qr && <PrintLabel qr={qr} title={b.title} barcode={b.barcode ?? ""} />}
-          </div>
+          {/* barcode label */}
+          <BookLabel value={b.barcode ?? ""} title={b.title} shelf={b.shelf} />
         </div>
 
         {/* footer actions */}
