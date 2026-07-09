@@ -3,7 +3,7 @@ import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import Avatar from "@/components/Avatar";
 import ConfirmDelete from "@/components/ConfirmDelete";
-import Select from "@/components/Select";
+import SearchToolbar from "@/components/SearchToolbar";
 import { createClient } from "@/lib/supabase/server";
 import type { Student } from "@/lib/types";
 import { deleteStudent } from "./actions";
@@ -47,26 +47,22 @@ export default async function StudentsPage({
       )}
 
       {/* toolbar */}
-      <form className="mb-6 flex flex-wrap items-center gap-3" action="/students">
-        <div className="relative min-w-0 flex-1">
-          <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-mute" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-          <input name="q" defaultValue={q} placeholder="Search name, roll no or email…" className="w-full rounded-xl border border-mist-deep bg-paper py-2.5 pl-10 pr-4 text-sm outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/25" />
-        </div>
-        <Select
-          name="status"
-          ariaLabel="Filter by status"
-          defaultValue={status}
-          className="w-44"
-          buttonClassName="w-full rounded-xl border bg-paper px-3 py-2.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-gold-500/25"
-          options={[
+      <SearchToolbar
+        basePath="/students"
+        q={q}
+        placeholder="Search name, roll no or email…"
+        filter={{
+          name: "status",
+          value: status,
+          ariaLabel: "Filter by status",
+          width: "w-44",
+          options: [
             { value: "", label: "All statuses" },
             { value: "active", label: "Active" },
             { value: "blocked", label: "Blocked" },
-          ]}
-        />
-        <button type="submit" className="rounded-xl bg-navy-900 px-4 py-2.5 text-sm font-semibold text-cream hover:bg-navy-800">Search</button>
-        {filtering && <Link href="/students" className="text-sm font-semibold text-ink-mute hover:text-navy-900">Clear</Link>}
-      </form>
+          ],
+        }}
+      />
 
       {list.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-mist-deep bg-paper p-12 text-center">
