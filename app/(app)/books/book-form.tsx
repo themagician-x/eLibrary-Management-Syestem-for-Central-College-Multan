@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Combobox from "@/components/Combobox";
+import { useModal, useBeforeUnload } from "@/components/unsaved";
 import type { Book, BookInput } from "@/lib/types";
 import type { BookFormState } from "./actions";
 
@@ -37,11 +38,36 @@ export default function BookForm({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [category, setCategory] = useState((book?.category ?? "") as string);
 
+  const { setDirty: setDirtyCtx, close } = useModal();
+  const [dirty, setDirty] = useState(false);
+  useBeforeUnload(dirty);
+  const markDirty = () => {
+    if (!dirty) {
+      setDirty(true);
+      setDirtyCtx(true);
+    }
+  };
+  const clearDirty = () => {
+    setDirty(false);
+    setDirtyCtx(false);
+  };
+
+  // on a successful create, close the modal (or navigate on the standalone page)
+  useEffect(() => {
+    if (state.ok) {
+      setDirtyCtx(false);
+      if (close) close();
+      else router.push("/books");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.ok]);
+
   async function onCoverChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadError(null);
     setUploading(true);
+    markDirty();
     try {
       const supabase = createClient();
       const ext = file.name.split(".").pop() || "jpg";
@@ -62,7 +88,7 @@ export default function BookForm({
   const v = (k: keyof BookInput) => (book?.[k as keyof Book] ?? "") as string | number;
 
   return (
-    <form action={formAction} className="grid gap-8 lg:grid-cols-[240px_1fr]">
+    <form action={formAction} onInput={markDirty} onSubmit={clearDirty} className="grid gap-8 lg:grid-cols-[240px_1fr]">
       {/* cover column */}
       <div>
         <span className={label}>Cover</span>
@@ -156,7 +182,7 @@ export default function BookForm({
           <button type="submit" disabled={pending || uploading} className="rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-cream transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-60">
             {pending ? "Saving…" : submitLabel}
           </button>
-          <button type="button" onClick={() => router.push("/books")} className="rounded-xl px-5 py-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
+          <button type="button" onClick={() => (close ? close() : router.push("/books"))} className="rounded-xl px-5 py-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
             Cancel
           </button>
         </div>

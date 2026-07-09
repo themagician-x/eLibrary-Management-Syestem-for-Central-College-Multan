@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Select from "@/components/Select";
+import { useModal, useBeforeUnload } from "@/components/unsaved";
 import type { Student } from "@/lib/types";
 import type { StudentFormState } from "./actions";
 
@@ -34,11 +35,35 @@ export default function StudentForm({
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  const { setDirty: setDirtyCtx, close } = useModal();
+  const [dirty, setDirty] = useState(false);
+  useBeforeUnload(dirty);
+  const markDirty = () => {
+    if (!dirty) {
+      setDirty(true);
+      setDirtyCtx(true);
+    }
+  };
+  const clearDirty = () => {
+    setDirty(false);
+    setDirtyCtx(false);
+  };
+
+  useEffect(() => {
+    if (state.ok) {
+      setDirtyCtx(false);
+      if (close) close();
+      else router.push("/students");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.ok]);
+
   async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadError(null);
     setUploading(true);
+    markDirty();
     try {
       const supabase = createClient();
       const ext = file.name.split(".").pop() || "jpg";
@@ -57,7 +82,7 @@ export default function StudentForm({
   const v = (k: keyof Student) => (student?.[k] ?? "") as string;
 
   return (
-    <form action={formAction} className="grid gap-8 lg:grid-cols-[200px_1fr]">
+    <form action={formAction} onInput={markDirty} onSubmit={clearDirty} className="grid gap-8 lg:grid-cols-[200px_1fr]">
       {/* photo column */}
       <div>
         <span className={label}>Photo</span>
@@ -133,7 +158,7 @@ export default function StudentForm({
           <button type="submit" disabled={pending || uploading} className="rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-cream transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-60">
             {pending ? "Saving…" : submitLabel}
           </button>
-          <button type="button" onClick={() => router.push("/students")} className="rounded-xl px-5 py-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
+          <button type="button" onClick={() => (close ? close() : router.push("/students"))} className="rounded-xl px-5 py-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
             Cancel
           </button>
         </div>

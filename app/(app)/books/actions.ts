@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { generateBarcode } from "@/lib/barcode";
 
-export type BookFormState = { error?: string };
+export type BookFormState = { error?: string; ok?: boolean };
 
 function parse(formData: FormData) {
   const num = (v: FormDataEntryValue | null) => {
@@ -49,7 +49,7 @@ export async function createBook(
 
   revalidatePath("/books");
   revalidatePath("/");
-  redirect("/books");
+  return { ok: true };
 }
 
 export async function updateBook(

@@ -4,8 +4,10 @@ import Sidebar from "@/components/Sidebar";
 
 export default async function AppLayout({
   children,
+  modal,
 }: {
   children: React.ReactNode;
+  modal: React.ReactNode;
 }) {
   const supabase = await createClient();
   const {
@@ -19,6 +21,7 @@ export default async function AppLayout({
     <div className="flex min-h-dvh flex-col lg:flex-row">
       <Sidebar email={user.email ?? "admin"} />
       <main className="min-w-0 flex-1">{children}</main>
+      {modal}
     </div>
   );
 }

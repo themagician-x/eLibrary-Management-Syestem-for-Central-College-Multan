@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export type StudentFormState = { error?: string };
+export type StudentFormState = { error?: string; ok?: boolean };
 
 function parse(formData: FormData) {
   const str = (v: FormDataEntryValue | null) => {
@@ -39,7 +39,7 @@ export async function createStudent(
 
   revalidatePath("/students");
   revalidatePath("/");
-  redirect("/students");
+  return { ok: true };
 }
 
 export async function updateStudent(
