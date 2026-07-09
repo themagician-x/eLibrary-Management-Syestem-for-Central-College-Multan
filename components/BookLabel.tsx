@@ -24,12 +24,12 @@ export default function BookLabel({
     try {
       JsBarcode(svgRef.current, value, {
         format: "CODE128",
-        width: 2,
-        height: 56,
-        margin: 6,
-        fontSize: 15,
+        width: 1.6,
+        height: 40,
+        margin: 0,
+        fontSize: 12,
         fontOptions: "bold",
-        textMargin: 4,
+        textMargin: 2,
         background: "#ffffff",
         lineColor: "#12203a",
       });
@@ -40,7 +40,7 @@ export default function BookLabel({
 
   function print() {
     const svg = svgRef.current?.outerHTML ?? "";
-    const w = window.open("", "_blank", "width=440,height=560");
+    const w = window.open("", "_blank", "width=360,height=280");
     if (!w) return;
     w.document.write(`
       <html>
@@ -48,19 +48,17 @@ export default function BookLabel({
         <style>
           * { margin:0; padding:0; box-sizing:border-box; font-family: ui-sans-serif, system-ui, sans-serif; }
           body { display:flex; align-items:center; justify-content:center; height:100vh; }
-          .label { width:320px; border:1px solid #ccd7e8; border-radius:12px; padding:18px; text-align:center; }
-          .t { font-size:14px; font-weight:700; color:#06377b; margin-bottom:10px; line-height:1.3; }
-          .shelf { font-size:13px; font-weight:700; letter-spacing:1px; color:#12203a; margin-top:10px; }
-          .shelf span { color:#6a778c; font-weight:600; font-size:10px; letter-spacing:2px; }
-          .c { font-size:9px; text-transform:uppercase; letter-spacing:2px; color:#6a778c; margin-top:10px; }
+          .label { width:200px; border:1px solid #d3dbe8; border-radius:6px; padding:10px; text-align:center; }
+          .t { font-size:10px; font-weight:700; color:#06377b; line-height:1.2; margin-bottom:5px; }
           svg { max-width:100%; height:auto; }
+          .shelf { font-size:10px; font-weight:700; color:#12203a; margin-top:3px; }
+          .shelf span { color:#6a778c; font-weight:600; font-size:8px; letter-spacing:1px; }
         </style></head>
         <body>
           <div class="label">
             <div class="t">${title}</div>
             ${svg}
             ${shelf ? `<div class="shelf"><span>SHELF</span> ${shelf}</div>` : ""}
-            <div class="c">Central College Library</div>
           </div>
           <script>window.onload = () => { window.print(); }</script>
         </body>
@@ -69,22 +67,21 @@ export default function BookLabel({
   }
 
   return (
-    <div className="rounded-2xl border border-mist-deep bg-paper p-5">
-      <p className="mb-3 text-center font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Scan code</p>
+    <div className="rounded-xl border border-mist-deep bg-paper p-4">
       {value ? (
         <svg ref={svgRef} className="mx-auto h-auto max-w-full" />
       ) : (
-        <p className="py-4 text-center text-xs text-ink-mute">No barcode assigned</p>
+        <p className="py-3 text-center text-xs text-ink-mute">No barcode assigned</p>
       )}
       {shelf && (
-        <p className="mt-2 text-center text-sm font-semibold text-navy-900">
-          <span className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-ink-mute">Shelf</span> {shelf}
+        <p className="mt-1 text-center text-xs font-semibold text-navy-900">
+          <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">Shelf</span> {shelf}
         </p>
       )}
       <button
         type="button"
         onClick={print}
-        className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-navy-900 px-4 py-2.5 text-sm font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream"
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-navy-900 px-4 py-2 text-sm font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream"
       >
         <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2M6 14h12v7H6z" /></svg>
         Print label
