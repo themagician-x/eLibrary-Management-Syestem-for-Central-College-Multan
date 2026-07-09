@@ -179,7 +179,7 @@ export default function BookForm({
         )}
       </div>
 
-      <div className="flex items-center gap-3 lg:col-span-2">
+      <div className="flex items-center justify-end gap-3 lg:col-span-2">
         <button type="submit" disabled={pending || uploading} className="rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-cream transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-60">
           {pending ? "Saving…" : submitLabel}
         </button>
