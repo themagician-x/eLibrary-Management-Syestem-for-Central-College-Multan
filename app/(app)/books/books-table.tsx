@@ -15,7 +15,7 @@ export default function BooksTable({ books }: { books: Book[] }) {
       <div className="overflow-x-auto rounded-2xl border border-mist-deep bg-paper">
         <table className="w-full min-w-[680px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-mist-deep text-left font-mono text-[0.62rem] uppercase tracking-[0.12em] text-ink-mute">
+            <tr className="border-b border-mist-deep bg-mist text-left font-mono text-[0.62rem] uppercase tracking-[0.12em] text-ink-mute">
               <th className="px-4 py-3 font-semibold">Book</th>
               <th className="px-4 py-3 font-semibold">Category</th>
               <th className="px-4 py-3 font-semibold">Shelf</th>
