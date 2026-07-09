@@ -61,26 +61,23 @@ export default function ReservePanel() {
   }
 
   return (
-    <div className="crest-lines rounded-2xl bg-navy-950 p-6">
-      <p className="eyebrow" style={{ color: "var(--color-gold-400)" }}>Place a hold</p>
-      <div className="mt-4 grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-start">
+    <div>
+      <div className="space-y-4">
         <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-navy-100/70">Book</label>
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-ink-soft">Book</label>
           <AsyncPicker placeholder="Search title or scan barcode…" search={searchBooks} selected={book} onPick={setBook} onClear={() => setBook(null)} />
         </div>
         <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-navy-100/70">Student</label>
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-ink-soft">Student</label>
           <AsyncPicker placeholder="Search name or roll no…" search={searchStudents} selected={student} onPick={setStudent} onClear={() => setStudent(null)} />
         </div>
-        <div className="md:pt-6">
-          <button type="button" onClick={submit} disabled={!book || !student || pending} className="w-full rounded-xl bg-gold-500 px-6 py-2.5 text-sm font-bold text-navy-950 transition-colors hover:bg-gold-400 disabled:cursor-not-allowed disabled:opacity-50 md:w-auto">
-            {pending ? "Reserving…" : "Reserve"}
-          </button>
-        </div>
       </div>
-      {msg?.err && <p className="mt-3 rounded-lg bg-danger-soft px-3.5 py-2 text-sm font-medium text-danger">{msg.err}</p>}
-      {msg?.ok && <p className="mt-3 rounded-lg bg-ok-soft px-3.5 py-2 text-sm font-medium text-ok">{msg.ok}</p>}
-      <p className="mt-3 font-mono text-[0.6rem] uppercase tracking-wider text-navy-100/45">
+      {msg?.err && <p className="mt-4 rounded-lg border border-danger/20 bg-danger-soft px-3.5 py-2.5 text-sm font-medium text-danger">{msg.err}</p>}
+      {msg?.ok && <p className="mt-4 rounded-lg border border-ok/20 bg-ok-soft px-3.5 py-2.5 text-sm font-medium text-ok">{msg.ok}</p>}
+      <button type="button" onClick={submit} disabled={!book || !student || pending} className="mt-5 w-full rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-cream transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-50">
+        {pending ? "Placing hold…" : "Place hold"}
+      </button>
+      <p className="mt-3 text-center font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute">
         When a copy is returned, the next student in the queue is flagged ready for pickup
       </p>
     </div>

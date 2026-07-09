@@ -4,7 +4,6 @@ import PageShell from "@/components/PageShell";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings } from "@/lib/settings";
 import type { LoanWithRefs } from "@/lib/types";
-import IssuePanel from "./issue-panel";
 import LoanActions from "./loan-actions";
 
 export const metadata: Metadata = { title: "Circulation" };
@@ -53,11 +52,14 @@ export default async function CirculationPage({
       title="Circulation"
       subtitle="Issue, return and renew books."
       badge={`${onLoanCount ?? 0} on loan`}
+      actions={
+        <Link href="/circulation/issue" className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">
+          + Issue a book
+        </Link>
+      }
     >
-      <IssuePanel loanDays={settings.loan_days} maxBooks={settings.max_books} />
-
       {/* current loans */}
-      <div className="mt-10">
+      <div>
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-display text-lg font-semibold text-navy-900">
             {filter === "overdue" ? "Overdue books" : "Books on loan"}
