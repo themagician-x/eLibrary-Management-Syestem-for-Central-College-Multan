@@ -53,12 +53,14 @@ export default function BookLabel({
           svg { max-width:100%; height:auto; }
           .shelf { font-size:10px; font-weight:700; color:#12203a; margin-top:3px; }
           .shelf span { color:#6a778c; font-weight:600; font-size:8px; letter-spacing:1px; }
+          .c { font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:#06377b; margin-top:5px; }
         </style></head>
         <body>
           <div class="label">
             <div class="t">${title}</div>
             ${svg}
             ${shelf ? `<div class="shelf"><span>SHELF</span> ${shelf}</div>` : ""}
+            <div class="c">Central College Library</div>
           </div>
           <script>window.onload = () => { window.print(); }</script>
         </body>
@@ -78,6 +80,9 @@ export default function BookLabel({
           <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">Shelf</span> {shelf}
         </p>
       )}
+      <p className="mt-1 text-center font-mono text-[0.55rem] font-bold uppercase tracking-[0.12em] text-navy-900/70">
+        Central College Library
+      </p>
       <button
         type="button"
         onClick={print}
