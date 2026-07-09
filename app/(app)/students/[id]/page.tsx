@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageShell from "@/components/PageShell";
 import Avatar from "@/components/Avatar";
-import ConfirmDelete from "@/components/ConfirmDelete";
+import DeleteButton from "@/components/DeleteButton";
 import { createClient } from "@/lib/supabase/server";
 import { money } from "@/lib/config";
 import type { Student } from "@/lib/types";
@@ -67,7 +67,7 @@ export default async function StudentProfilePage({
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/students" className="rounded-xl px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">← Students</Link>
           <Link href={`/students/${s.id}/edit`} className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">Edit</Link>
-          <ConfirmDelete onDelete={deleteStudent.bind(null, s.id)} name={s.name} redirectTo="/students" />
+          <DeleteButton onDelete={deleteStudent.bind(null, s.id)} name={s.name} title="Delete student" redirectTo="/students" />
         </div>
       }
     >

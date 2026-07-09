@@ -5,7 +5,8 @@ import QRCode from "qrcode";
 import PageShell from "@/components/PageShell";
 import { createClient } from "@/lib/supabase/server";
 import type { Book } from "@/lib/types";
-import DeleteBookButton from "../delete-book-button";
+import DeleteButton from "@/components/DeleteButton";
+import { deleteBook } from "../actions";
 import PrintLabel from "./print-label";
 
 export const metadata: Metadata = { title: "Book" };
@@ -47,7 +48,7 @@ export default async function BookDetailPage({
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/books" className="rounded-xl px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">← Books</Link>
           <Link href={`/books/${book.id}/edit`} className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">Edit</Link>
-          <DeleteBookButton id={book.id} title={book.title} />
+          <DeleteButton onDelete={deleteBook.bind(null, book.id)} name={`“${book.title}”`} title="Delete book" redirectTo="/books" />
         </div>
       }
     >

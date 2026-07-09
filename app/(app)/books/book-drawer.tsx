@@ -5,7 +5,8 @@ import Link from "next/link";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/client";
 import type { Book } from "@/lib/types";
-import DeleteBookButton from "./delete-book-button";
+import DeleteButton from "@/components/DeleteButton";
+import { deleteBook } from "./actions";
 import PrintLabel from "./[id]/print-label";
 
 export default function BookDrawer({
@@ -170,7 +171,7 @@ export default function BookDrawer({
           >
             Edit book
           </Link>
-          <DeleteBookButton id={b.id} title={b.title} onDeleted={onClose} />
+          <DeleteButton onDelete={() => deleteBook(b.id)} name={`“${b.title}”`} title="Delete book" onDeleted={onClose} />
         </div>
       </div>
     </div>

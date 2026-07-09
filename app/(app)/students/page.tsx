@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import Avatar from "@/components/Avatar";
-import ConfirmDelete from "@/components/ConfirmDelete";
+import DeleteButton from "@/components/DeleteButton";
 import SearchToolbar from "@/components/SearchToolbar";
 import { createClient } from "@/lib/supabase/server";
 import type { Student } from "@/lib/types";
@@ -94,7 +94,7 @@ export default async function StudentsPage({
                   <Link href={`/students/${s.id}/edit`} aria-label={`Edit ${s.name}`} title="Edit" className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-mute transition-colors hover:bg-mist hover:text-navy-900">
                     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h4L18.5 9.5a2.1 2.1 0 0 0-3-3L5 17v3Z" /><path d="M13.5 6.5l3 3" /></svg>
                   </Link>
-                  <ConfirmDelete onDelete={deleteStudent.bind(null, s.id)} name={s.name} />
+                  <DeleteButton onDelete={deleteStudent.bind(null, s.id)} name={s.name} title="Delete student" />
                 </span>
               </div>
             ))}
