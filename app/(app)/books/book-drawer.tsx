@@ -107,19 +107,19 @@ export default function BookDrawer({
 
         {/* body */}
         <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
-          {/* cover + status */}
-          <div className="flex gap-4">
-            <div className="aspect-[3/4] w-28 flex-none overflow-hidden rounded-xl border border-mist-deep bg-mist">
+          {/* cover */}
+          <div>
+            <div className="mx-auto aspect-[3/4] w-52 max-w-full overflow-hidden rounded-2xl border border-mist-deep bg-mist shadow-[0_12px_32px_rgba(5,31,66,0.16)]">
               {b.cover_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={b.cover_url} alt="" className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full items-center justify-center p-3 text-center">
-                  <span className="font-display text-xs font-semibold text-ink-mute">{b.title}</span>
+                <div className="flex h-full items-center justify-center p-4 text-center">
+                  <span className="font-display text-sm font-semibold text-ink-mute">{b.title}</span>
                 </div>
               )}
             </div>
-            <div className="flex flex-col items-start gap-2 pt-1">
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               <span className={`inline-block rounded-full px-3 py-1 text-xs font-bold ${b.available_copies > 0 ? "bg-ok-soft text-ok" : "bg-danger-soft text-danger"}`}>
                 {b.available_copies} of {b.total_copies} available
               </span>
