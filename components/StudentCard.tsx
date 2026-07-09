@@ -34,23 +34,22 @@ export default function StudentCard({
     const qr = await QRCode.toDataURL(payload, { margin: 1, width: 220 });
     setBusy(false);
 
-    const w = window.open("", "_blank", "width=780,height=620");
+    const w = window.open("", "_blank", "width=760,height=640");
     if (!w) return;
 
-    const fmt = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    const short = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
     const memberSince = new Date(student.created_at).getFullYear();
     const cardNo = (student.roll_no || student.id.slice(0, 8)).toUpperCase();
 
+    // back of the card: barcodes of the books currently issued, plus blanks
     const ROWS = 10;
-    const body = Array.from({ length: ROWS }, (_, i) => {
+    const rows = Array.from({ length: ROWS }, (_, i) => {
       const l = loans[i];
       return `<tr>
         <td class="n">${i + 1}</td>
-        <td>${l ? escapeHtml(l.title) : ""}</td>
         <td class="mono">${l ? (l.barcode ?? "") : ""}</td>
-        <td>${l ? fmt(l.issued_at) : ""}</td>
-        <td>${l ? fmt(l.due_at) : ""}</td>
-        <td></td>
+        <td>${l ? short(l.issued_at) : ""}</td>
+        <td>${l ? short(l.due_at) : ""}</td>
       </tr>`;
     }).join("");
 
@@ -62,50 +61,79 @@ export default function StudentCard({
       <html>
         <head><title>${escapeHtml(student.name)} — library card</title>
         <style>
-          * { margin:0; padding:0; box-sizing:border-box; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif; }
-          body { display:flex; justify-content:center; padding:24px; }
-          .card { width:700px; border:2px solid #06377b; border-radius:14px; overflow:hidden; }
-          .head { background:#06377b; color:#fff; padding:12px 20px; display:flex; justify-content:space-between; align-items:center; }
-          .brand { font-weight:800; letter-spacing:.4px; font-size:15px; }
-          .type { font-size:10px; text-transform:uppercase; letter-spacing:2px; color:#faa61a; font-weight:700; }
-          .body { display:flex; gap:20px; padding:18px 20px; align-items:center; }
-          .photo { width:96px; height:96px; border-radius:10px; object-fit:cover; border:1px solid #d3dbe8; flex:none; }
-          .photo.ph { display:flex; align-items:center; justify-content:center; background:#06377b; color:#fcbc4d; font-size:30px; font-weight:700; }
-          .info { flex:1; }
-          .info h1 { font-size:20px; color:#06377b; margin-bottom:6px; }
-          .row { font-size:12px; color:#12203a; margin:2px 0; }
-          .row span { color:#6a778c; display:inline-block; width:74px; text-transform:uppercase; font-size:9px; letter-spacing:1px; }
-          .qr { text-align:center; flex:none; }
-          .qr img { width:96px; height:96px; }
-          .qr .no { font-family: ui-monospace, monospace; font-size:11px; color:#12203a; margin-top:3px; letter-spacing:1px; font-weight:700; }
-          table { width:100%; border-collapse:collapse; font-size:11px; }
-          caption { text-align:left; padding:6px 20px; font-size:9px; text-transform:uppercase; letter-spacing:1.5px; color:#6a778c; }
-          th { background:#e9edf4; color:#6a778c; text-transform:uppercase; font-size:9px; letter-spacing:.6px; padding:6px 8px; text-align:left; border-top:1px solid #d3dbe8; }
-          td { padding:6px 8px; border-top:1px solid #eef1f6; height:24px; color:#12203a; }
-          td.n, th.n { width:26px; color:#6a778c; }
-          .mono { font-family: ui-monospace, monospace; }
-          .foot { padding:8px 20px; font-size:9px; text-transform:uppercase; letter-spacing:1.5px; color:#6a778c; text-align:center; border-top:1px solid #d3dbe8; }
+          @page { size: auto; margin: 10mm; }
+          * { margin:0; padding:0; box-sizing:border-box; font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+              -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          body { display:flex; justify-content:center; align-items:flex-start; padding:10mm; background:#fff; }
+          .sheet { display:flex; gap:6mm; }
+
+          /* ID-1 portrait — same footprint as a driving licence */
+          .card { width:54mm; height:85.6mm; border:0.4mm solid #06377b; border-radius:3mm;
+                  overflow:hidden; display:flex; flex-direction:column; background:#fff; }
+
+          /* ---------- front ---------- */
+          .fhead { background:#06377b; color:#fff; padding:2mm 2.5mm; text-align:center; }
+          .brand { font-size:7px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; }
+          .type { font-size:5.5px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase; color:#faa61a; margin-top:.5mm; }
+          .fbody { padding:2.5mm 2.5mm 0; text-align:center; }
+          .photo { width:21mm; height:21mm; border-radius:2mm; object-fit:cover; border:0.3mm solid #d3dbe8; display:block; margin:0 auto; }
+          .photo.ph { display:flex; align-items:center; justify-content:center; background:#06377b; color:#fcbc4d; font-size:20px; font-weight:700; }
+          .name { font-size:10.5px; font-weight:800; color:#06377b; margin-top:2mm; line-height:1.15; }
+          .roll { font-family: ui-monospace, monospace; font-size:8px; font-weight:700; color:#12203a; margin-top:.8mm; letter-spacing:.4px; }
+          .dept { font-size:6.5px; color:#6a778c; margin-top:.6mm; line-height:1.2; }
+          .pill { display:inline-block; margin-top:1.4mm; padding:.6mm 2mm; border-radius:4mm;
+                  font-size:5.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; }
+          .pill.ok { background:#dcfce7; color:#15803d; }
+          .pill.no { background:#fee2e2; color:#b91c1c; }
+          .fqr { margin-top:auto; text-align:center; padding:0 2.5mm 1.5mm; }
+          .fqr img { width:19mm; height:19mm; }
+          .fqr .no { font-family: ui-monospace, monospace; font-size:6.5px; font-weight:700; color:#12203a; letter-spacing:.6px; margin-top:.3mm; }
+          .ffoot { background:#e9edf4; color:#6a778c; font-size:5.5px; letter-spacing:.8px; text-transform:uppercase;
+                   text-align:center; padding:1.2mm; border-top:0.3mm solid #d3dbe8; }
+
+          /* ---------- back ---------- */
+          .bhead { background:#06377b; color:#fff; font-size:6px; font-weight:800; letter-spacing:1.2px;
+                   text-transform:uppercase; text-align:center; padding:1.8mm; }
+          table { width:100%; border-collapse:collapse; }
+          th { background:#e9edf4; color:#6a778c; font-size:5px; letter-spacing:.5px; text-transform:uppercase;
+               padding:1.2mm .8mm; text-align:left; }
+          td { font-size:6px; color:#12203a; padding:0 .8mm; height:6.3mm; border-top:0.2mm solid #eef1f6; }
+          td.n, th.n { width:5mm; color:#6a778c; text-align:center; }
+          .mono { font-family: ui-monospace, monospace; letter-spacing:-.2px; }
+          .bfoot { margin-top:auto; font-size:5px; letter-spacing:.6px; text-transform:uppercase; color:#6a778c;
+                   text-align:center; padding:1.5mm; border-top:0.3mm solid #d3dbe8; line-height:1.5; }
         </style></head>
         <body>
-          <div class="card">
-            <div class="head"><div class="brand">Central College Library</div><div class="type">Student Library Card</div></div>
-            <div class="body">
-              ${photo}
-              <div class="info">
-                <h1>${escapeHtml(student.name)}</h1>
-                <div class="row"><span>Roll no</span> ${student.roll_no ?? "—"}</div>
-                <div class="row"><span>Class</span> ${escapeHtml(student.class_dept ?? "—")}</div>
-                <div class="row"><span>Member</span> Since ${memberSince}</div>
-                <div class="row"><span>Status</span> ${student.status === "active" ? "Active" : "Blocked"}</div>
+          <div class="sheet">
+            <!-- FRONT -->
+            <div class="card">
+              <div class="fhead">
+                <div class="brand">Central College Library</div>
+                <div class="type">Student Library Card</div>
               </div>
-              <div class="qr"><img src="${qr}" alt="QR" /><div class="no">${cardNo}</div></div>
+              <div class="fbody">
+                ${photo}
+                <div class="name">${escapeHtml(student.name)}</div>
+                <div class="roll">${student.roll_no ?? "—"}</div>
+                <div class="dept">${escapeHtml(student.class_dept ?? "—")}</div>
+                <span class="pill ${student.status === "active" ? "ok" : "no"}">${student.status === "active" ? "Active" : "Blocked"}</span>
+              </div>
+              <div class="fqr">
+                <img src="${qr}" alt="QR" />
+                <div class="no">${cardNo}</div>
+              </div>
+              <div class="ffoot">Member since ${memberSince}</div>
             </div>
-            <table>
-              <caption>Books on loan</caption>
-              <thead><tr><th class="n">#</th><th>Book</th><th>Barcode</th><th>Issued</th><th>Due</th><th>Returned</th></tr></thead>
-              <tbody>${body}</tbody>
-            </table>
-            <div class="foot">Property of Central College Library · Non-transferable · Report if found</div>
+
+            <!-- BACK -->
+            <div class="card">
+              <div class="bhead">Books on loan</div>
+              <table>
+                <thead><tr><th class="n">#</th><th>Book barcode</th><th>Issued</th><th>Due</th></tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+              <div class="bfoot">Property of Central College Library<br/>Non-transferable · Report if found</div>
+            </div>
           </div>
           <script>window.onload = () => { window.print(); }</script>
         </body>
