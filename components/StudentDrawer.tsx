@@ -8,24 +8,43 @@ import type { Student } from "@/lib/types";
 import Avatar from "@/components/Avatar";
 import DeleteButton from "@/components/DeleteButton";
 import StudentCard, { type CardLoan } from "@/components/StudentCard";
+import BookPeek from "@/components/BookPeek";
+import FineBreakdown from "@/components/FineBreakdown";
+import type { FineContext } from "@/lib/fines";
 import { deleteStudent } from "@/app/(app)/students/actions";
 
 type LoanRow = {
   id: string;
   issued_at: string;
   due_at: string;
+  returned_at: string | null;
+  renew_count: number;
   book: { id: string; title: string; author: string | null; barcode: string | null } | null;
+};
+
+type HoldRow = {
+  id: string;
+  status: string;
+  created_at: string;
+  book: { id: string; title: string } | null;
 };
 
 type Activity = {
   studentId: string;
   loans: LoanRow[];
+  history: LoanRow[];
+  holds: HoldRow[];
+  fines: FineContext[];
   totalBorrowed: number;
-  fines: number;
+  unpaid: number;
+  paid: number;
+  waived: number;
 };
 
 const day = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 const isOverdue = (dueAt: string) => new Date(dueAt).getTime() < Date.now();
+const daysOverdue = (dueAt: string) =>
+  Math.ceil((Date.now() - new Date(dueAt).getTime()) / 86_400_000);
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <p className="mb-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">{children}</p>;
@@ -64,22 +83,51 @@ export default function StudentDrawer({
     const id = student.id;
     const supabase = createClient();
     (async () => {
-      const [{ data: loanRows }, { count }, { data: fineRows }] = await Promise.all([
-        supabase
-          .from("loans")
-          .select("id,issued_at,due_at,book:books(id,title,author,barcode)")
-          .eq("student_id", id)
-          .is("returned_at", null)
-          .order("due_at", { ascending: true }),
-        supabase.from("loans").select("*", { count: "exact", head: true }).eq("student_id", id),
-        supabase.from("fines").select("amount").eq("student_id", id).eq("status", "unpaid"),
-      ]);
+      const LOAN_COLS = "id,issued_at,due_at,returned_at,renew_count,book:books(id,title,author,barcode)";
+      const [{ data: loanRows }, { data: historyRows }, { count }, { data: fineRows }, { data: holdRows }] =
+        await Promise.all([
+          supabase
+            .from("loans")
+            .select(LOAN_COLS)
+            .eq("student_id", id)
+            .is("returned_at", null)
+            .order("due_at", { ascending: true }),
+          supabase
+            .from("loans")
+            .select(LOAN_COLS)
+            .eq("student_id", id)
+            .not("returned_at", "is", null)
+            .order("returned_at", { ascending: false })
+            .limit(10),
+          supabase.from("loans").select("*", { count: "exact", head: true }).eq("student_id", id),
+          supabase
+            .from("fines")
+            .select("*, loan:loans(issued_at,due_at,returned_at,renew_count,book:books(id,title))")
+            .eq("student_id", id)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("reservations")
+            .select("id,status,created_at,book:books(id,title)")
+            .eq("student_id", id)
+            .in("status", ["waiting", "ready"])
+            .order("created_at", { ascending: true }),
+        ]);
       if (!alive) return;
+
+      const fines = (fineRows ?? []) as unknown as FineContext[];
+      const sum = (status: string) =>
+        fines.filter((f) => f.status === status).reduce((n, f) => n + Number(f.amount), 0);
+
       setActivity({
         studentId: id,
         loans: (loanRows ?? []) as unknown as LoanRow[],
+        history: (historyRows ?? []) as unknown as LoanRow[],
+        holds: (holdRows ?? []) as unknown as HoldRow[],
+        fines,
         totalBorrowed: count ?? 0,
-        fines: (fineRows ?? []).reduce((sum, r) => sum + Number(r.amount), 0),
+        unpaid: sum("unpaid"),
+        paid: sum("paid"),
+        waived: sum("waived"),
       });
     })();
     return () => {
@@ -102,8 +150,13 @@ export default function StudentDrawer({
   // keyed by id so the previous student's numbers never show under a new name
   const data = activity?.studentId === s.id ? activity : null;
   const loans = data?.loans ?? [];
+  const history = data?.history ?? [];
+  const holds = data?.holds ?? [];
+  const fines = data?.fines ?? [];
   const overdue = loans.filter((l) => isOverdue(l.due_at)).length;
   const active = s.status === "active";
+  const openFines = fines.filter((f) => f.status === "unpaid");
+  const settledFines = fines.filter((f) => f.status !== "unpaid");
 
   const cardLoans: CardLoan[] = loans.map((l) => ({
     title: l.book?.title ?? "Unknown book",
@@ -171,7 +224,7 @@ export default function StudentDrawer({
         {/* body */}
         <div className="flex-1 space-y-6 overflow-y-auto overscroll-contain px-6 py-5">
           {/* activity tiles — the overdue and fines tiles jump to the work */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <Tile label="On loan" value={loans.length} loading={!data} />
             <Tile
               label="Overdue"
@@ -182,14 +235,15 @@ export default function StudentDrawer({
               onNavigate={onClose}
             />
             <Tile
-              label="Fines"
-              value={money(data?.fines ?? 0)}
+              label="Owes now"
+              value={money(data?.unpaid ?? 0)}
               dense
               loading={!data}
-              tone={data && data.fines > 0 ? "danger" : undefined}
-              href={data && data.fines > 0 ? "/fines" : undefined}
+              tone={data && data.unpaid > 0 ? "danger" : undefined}
+              href={data && data.unpaid > 0 ? "/fines" : undefined}
               onNavigate={onClose}
             />
+            <Tile label="Paid to date" value={money(data?.paid ?? 0)} dense loading={!data} />
           </div>
 
           {/* contact + enrolment */}
@@ -230,22 +284,133 @@ export default function StudentDrawer({
                       key={l.id}
                       className={`flex items-center justify-between gap-3 rounded-xl border bg-paper px-4 py-2.5 ${late ? "border-danger/30 bg-danger-soft/40" : "border-mist-deep"}`}
                     >
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-semibold text-navy-900">{l.book?.title ?? "Unknown book"}</span>
+                      <BookPeek bookId={l.book?.id} className="group min-w-0 text-left">
+                        <span className="block truncate text-sm font-semibold text-navy-900 group-hover:text-navy-700">{l.book?.title ?? "Unknown book"}</span>
                         <span className="block truncate text-xs text-ink-mute">
                           {l.book?.author ?? "Unknown author"}
-                          {l.book?.barcode ? <span className="font-mono"> · {l.book.barcode}</span> : null}
+                          {l.renew_count > 0 ? ` · renewed ${l.renew_count}×` : ""}
                         </span>
-                      </span>
+                      </BookPeek>
                       <span className="flex-none text-right">
                         <span className={`block rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold ${late ? "bg-danger text-white" : "bg-mist text-ink-soft"}`}>
-                          {late ? "Overdue" : `Due ${day(l.due_at)}`}
+                          {late ? `${daysOverdue(l.due_at)}d overdue` : `Due ${day(l.due_at)}`}
                         </span>
                         <span className="mt-1 block text-[0.65rem] text-ink-mute">Issued {day(l.issued_at)}</span>
                       </span>
                     </div>
                   );
                 })}
+              </div>
+            )}
+          </div>
+
+          {/* holds */}
+          {holds.length > 0 && (
+            <div>
+              <SectionLabel>Holds · {holds.length} active</SectionLabel>
+              <div className="space-y-2">
+                {holds.map((h) => (
+                  <div key={h.id} className="flex items-center justify-between gap-3 rounded-xl border border-mist-deep bg-paper px-4 py-2.5">
+                    <BookPeek bookId={h.book?.id} className="group min-w-0 text-left">
+                      <span className="block truncate text-sm font-semibold text-navy-900 group-hover:text-navy-700">
+                        {h.book?.title ?? "Unknown book"}
+                      </span>
+                      <span className="block text-xs text-ink-mute">Placed {day(h.created_at)}</span>
+                    </BookPeek>
+                    <span className={`flex-none rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold ${h.status === "ready" ? "bg-ok-soft text-ok" : "bg-gold-100 text-gold-700"}`}>
+                      {h.status === "ready" ? "Ready" : "Waiting"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* fines — every charge, with how it was worked out */}
+          <div>
+            <SectionLabel>
+              Fines &amp; charges
+              {data ? ` · ${money(data.unpaid)} owed of ${money(data.unpaid + data.paid + data.waived)} charged` : ""}
+            </SectionLabel>
+            {!data ? (
+              <div className="h-20 animate-pulse rounded-xl bg-mist" />
+            ) : fines.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-mist-deep bg-paper px-4 py-5 text-center text-sm text-ink-mute">
+                Never been fined.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {[...openFines, ...settledFines].map((f) => (
+                  <div
+                    key={f.id}
+                    className={`rounded-xl border px-4 py-3 ${f.status === "unpaid" ? "border-danger/30 bg-danger-soft/40" : "border-mist-deep bg-paper"}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <span className={`rounded-full px-2 py-0.5 text-[0.62rem] font-bold capitalize ${f.reason === "late" ? "bg-warn-soft text-warn" : f.reason === "lost" ? "bg-danger-soft text-danger" : "bg-gold-100 text-gold-700"}`}>
+                          {f.reason}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 text-[0.62rem] font-bold capitalize ${f.status === "unpaid" ? "bg-danger text-white" : f.status === "paid" ? "bg-ok-soft text-ok" : "bg-mist text-ink-soft"}`}>
+                          {f.status}
+                        </span>
+                      </span>
+                      <span className="flex-none font-display text-base font-semibold text-navy-900">
+                        {money(Number(f.amount))}
+                      </span>
+                    </div>
+
+                    {f.loan?.book && (
+                      <BookPeek bookId={f.loan.book.id} className="group mt-1.5 block min-w-0 text-left">
+                        <span className="block truncate text-sm font-semibold text-navy-900 group-hover:text-navy-700">
+                          {f.loan.book.title}
+                        </span>
+                      </BookPeek>
+                    )}
+
+                    <FineBreakdown fine={f} className="mt-1.5" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* returned loans */}
+          <div>
+            <SectionLabel>
+              Borrowing history{data && data.totalBorrowed > 0 ? ` · ${data.totalBorrowed} all-time` : ""}
+            </SectionLabel>
+            {!data ? (
+              <div className="h-14 animate-pulse rounded-xl bg-mist" />
+            ) : history.length === 0 ? (
+              <p className="rounded-xl border border-dashed border-mist-deep bg-paper px-4 py-5 text-center text-sm text-ink-mute">
+                Nothing returned yet.
+              </p>
+            ) : (
+              <div className="divide-y divide-mist overflow-hidden rounded-xl border border-mist-deep bg-paper">
+                {history.map((l) => {
+                  const late = l.returned_at && new Date(l.returned_at) > new Date(l.due_at);
+                  return (
+                    <div key={l.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                      <BookPeek bookId={l.book?.id} className="group min-w-0 text-left">
+                        <span className="block truncate text-sm font-semibold text-navy-900 group-hover:text-navy-700">
+                          {l.book?.title ?? "Unknown book"}
+                        </span>
+                        <span className="block truncate text-[0.68rem] text-ink-mute">
+                          {day(l.issued_at)} → {l.returned_at ? day(l.returned_at) : "—"}
+                          {l.renew_count > 0 ? ` · renewed ${l.renew_count}×` : ""}
+                        </span>
+                      </BookPeek>
+                      <span className={`flex-none rounded-full px-2 py-0.5 text-[0.62rem] font-bold ${late ? "bg-warn-soft text-warn" : "bg-ok-soft text-ok"}`}>
+                        {late ? "Late" : "On time"}
+                      </span>
+                    </div>
+                  );
+                })}
+                {data.totalBorrowed > history.length + loans.length && (
+                  <p className="px-4 py-2 text-center text-[0.68rem] text-ink-mute">
+                    Showing the {history.length} most recent returns.
+                  </p>
+                )}
               </div>
             )}
           </div>
