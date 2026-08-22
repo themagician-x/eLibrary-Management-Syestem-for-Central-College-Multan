@@ -7,7 +7,7 @@ import { money } from "@/lib/config";
 import type { Student } from "@/lib/types";
 import Avatar from "@/components/Avatar";
 import DeleteButton from "@/components/DeleteButton";
-import StudentCard, { type CardLoan } from "@/components/StudentCard";
+import StudentCard from "@/components/StudentCard";
 import BookPeek from "@/components/BookPeek";
 import FineBreakdown from "@/components/FineBreakdown";
 import type { FineContext } from "@/lib/fines";
@@ -157,13 +157,6 @@ export default function StudentDrawer({
   const active = s.status === "active";
   const openFines = fines.filter((f) => f.status === "unpaid");
   const settledFines = fines.filter((f) => f.status !== "unpaid");
-
-  const cardLoans: CardLoan[] = loans.map((l) => ({
-    title: l.book?.title ?? "Unknown book",
-    barcode: l.book?.barcode ?? null,
-    issued_at: l.issued_at,
-    due_at: l.due_at,
-  }));
 
   const details: { k: string; v: React.ReactNode }[] = [
     { k: "Class / Dept", v: s.class_dept },
@@ -416,7 +409,7 @@ export default function StudentDrawer({
           </div>
 
           {/* library card */}
-          <StudentCard student={s} loans={cardLoans} />
+          <StudentCard student={s} />
         </div>
 
         {/* footer actions */}

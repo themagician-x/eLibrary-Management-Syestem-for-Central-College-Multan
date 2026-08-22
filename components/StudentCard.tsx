@@ -4,16 +4,6 @@ import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import type { Student } from "@/lib/types";
 
-export type CardLoan = {
-  title: string;
-  barcode: string | null;
-  issued_at: string;
-  due_at: string;
-};
-
-/** Blank rows to write future book barcodes into. More than this won't fit. */
-const ROWS = 7;
-
 /**
  * The card itself, scoped under `.sc` so the rules can't leak into the app.
  * Sized in mm so it prints at true ID-1 (driving-licence) size: 54 × 85.6 mm.
@@ -28,62 +18,43 @@ const CARD_CSS = `
   overflow:hidden; display:flex; flex-direction:column; background:#fff;
   break-inside:avoid; page-break-inside:avoid; }
 
-.sc .head, .sc .bhead, .sc table, .sc .foot { flex:none; }
-.sc .head { background:#06377b; color:#fff; text-align:center; padding:1.8mm 2mm; }
-.sc .brand { font-size:6.5px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; }
-.sc .type { font-size:5px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase;
-  color:#faa61a; margin-top:.4mm; }
+.sc .head { flex:none; background:#06377b; color:#fff; text-align:center; padding:2.2mm 2mm; }
+.sc .brand { font-size:7px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; }
+.sc .type { font-size:5.2px; font-weight:700; letter-spacing:1.3px; text-transform:uppercase;
+  color:#faa61a; margin-top:.5mm; }
 
-/* fixed height: a long name must never push the footer out of the card */
-.sc .id { display:flex; flex:none; gap:2mm; padding:2.5mm; align-items:flex-start;
-  height:26mm; overflow:hidden; }
-.sc .info { flex:1; min-width:0; overflow:hidden; }
-.sc .name { font-size:9.5px; font-weight:800; color:#06377b; line-height:1.15; }
-.sc .field { margin-top:1.3mm; }
-.sc .k { display:block; font-size:4.6px; letter-spacing:.7px; text-transform:uppercase; color:#6a778c; }
-.sc .v { display:block; font-size:6.4px; font-weight:700; color:#12203a; line-height:1.25; }
-/* long names and departments wrap to two lines, then ellipsis */
-.sc .name, .sc .v { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+/* identity, full width now that nothing competes for the space */
+.sc .id { flex:none; padding:3.2mm 3.5mm 2mm; }
+.sc .name { font-size:11px; font-weight:800; color:#06377b; line-height:1.15;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
   overflow:hidden; overflow-wrap:anywhere; }
-.sc .pill { display:inline-block; margin-top:1.5mm; padding:.5mm 1.8mm; border-radius:3mm;
-  font-size:5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
+.sc .field { margin-top:1.8mm; }
+.sc .k { display:block; font-size:4.8px; letter-spacing:.7px; text-transform:uppercase; color:#6a778c; }
+.sc .v { display:block; font-size:7px; font-weight:700; color:#12203a; line-height:1.25;
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
+  overflow:hidden; overflow-wrap:anywhere; }
+.sc .pill { display:inline-block; margin-top:2mm; padding:.6mm 2mm; border-radius:3mm;
+  font-size:5.2px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
 .sc .pill.ok { background:#dcfce7; color:#15803d; }
 .sc .pill.no { background:#fee2e2; color:#b91c1c; }
 
-.sc .qr { flex:none; text-align:center; }
-.sc .qr img { width:19mm; height:19mm; display:block; }
-.sc .qr .no { font-family:ui-monospace, monospace; font-size:5.6px; font-weight:700;
-  color:#12203a; margin-top:.5mm; letter-spacing:.3px; }
+/* the scan target — large, because a worn card reads badly at 19mm */
+.sc .qr { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:1.2mm; padding:1mm 3.5mm 2mm; border-top:0.2mm solid #e9edf4; margin-top:1.5mm; }
+.sc .qr img { width:30mm; height:30mm; display:block; }
+.sc .qr .no { font-family:ui-monospace, monospace; font-size:7.4px; font-weight:700;
+  color:#12203a; letter-spacing:.4px; }
+.sc .qr .scan { font-size:4.6px; letter-spacing:.6px; text-transform:uppercase; color:#6a778c; }
 
-.sc .bhead { background:#e9edf4; color:#6a778c; font-size:5px; font-weight:800; letter-spacing:1px;
-  text-transform:uppercase; padding:1.2mm 2.5mm; border-top:0.2mm solid #d3dbe8; }
-.sc table { width:100%; border-collapse:collapse; }
-.sc th { background:#f4f6fa; color:#6a778c; font-size:4.6px; letter-spacing:.4px;
-  text-transform:uppercase; padding:1mm .8mm; text-align:left; }
-.sc td { font-size:5.6px; color:#12203a; padding:0 .8mm; height:5.5mm; border-top:0.2mm solid #eef1f6; }
-.sc td.n, .sc th.n { width:4.5mm; text-align:center; color:#6a778c; }
-.sc .mono { font-family:ui-monospace, monospace; letter-spacing:-.2px; }
-
-.sc .foot { margin-top:auto; background:#06377b; color:#fff; font-size:4.6px; letter-spacing:.6px;
-  text-transform:uppercase; text-align:center; padding:1.4mm; line-height:1.5; }
+.sc .foot { flex:none; background:#06377b; color:#fff; font-size:4.6px; letter-spacing:.5px;
+  text-transform:uppercase; text-align:center; padding:1.6mm 2mm; line-height:1.6; }
+.sc .foot .lost { color:#fcbc4d; }
 `;
 
-const short = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
-
-function cardHtml(student: Student, loans: CardLoan[], qr: string) {
+function cardHtml(student: Student, qr: string) {
   const memberSince = new Date(student.created_at).getFullYear();
   const cardNo = (student.roll_no || student.id.slice(0, 8)).toUpperCase();
   const active = student.status === "active";
-
-  const rows = Array.from({ length: ROWS }, (_, i) => {
-    const l = loans[i];
-    return `<tr>
-      <td class="n">${i + 1}</td>
-      <td class="mono">${l?.barcode ? escapeHtml(l.barcode) : ""}</td>
-      <td>${l ? short(l.issued_at) : ""}</td>
-      <td>${l ? short(l.due_at) : ""}</td>
-    </tr>`;
-  }).join("");
 
   return `<div class="sc">
     <div class="head">
@@ -92,46 +63,39 @@ function cardHtml(student: Student, loans: CardLoan[], qr: string) {
     </div>
 
     <div class="id">
-      <div class="info">
-        <div class="name">${escapeHtml(student.name)}</div>
-        <div class="field">
-          <span class="k">Roll no</span>
-          <span class="v mono">${escapeHtml(student.roll_no ?? "—")}</span>
-        </div>
-        <div class="field">
-          <span class="k">Class / Dept</span>
-          <span class="v">${escapeHtml(student.class_dept ?? "—")}</span>
-        </div>
-        <span class="pill ${active ? "ok" : "no"}">${active ? "Active" : "Blocked"}</span>
+      <div class="name">${escapeHtml(student.name)}</div>
+      <div class="field">
+        <span class="k">Roll no</span>
+        <span class="v">${escapeHtml(student.roll_no ?? "—")}</span>
       </div>
-      <div class="qr">
-        <img src="${qr}" alt="" />
-        <div class="no">${escapeHtml(cardNo)}</div>
+      <div class="field">
+        <span class="k">Class / Dept</span>
+        <span class="v">${escapeHtml(student.class_dept ?? "—")}</span>
       </div>
+      <span class="pill ${active ? "ok" : "no"}">${active ? "Active" : "Blocked"}</span>
     </div>
 
-    <div class="bhead">Books on loan</div>
-    <table>
-      <thead><tr><th class="n">#</th><th>Book barcode</th><th>Issued</th><th>Due</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
+    <div class="qr">
+      <img src="${qr}" alt="" />
+      <div class="no">${escapeHtml(cardNo)}</div>
+      <div class="scan">Scan at the library desk</div>
+    </div>
 
-    <div class="foot">Member since ${memberSince} · Property of Central College Library</div>
+    <div class="foot">
+      Member since ${memberSince} · Property of Central College Library<br />
+      <span class="lost">If found, please return it to the library</span>
+    </div>
   </div>`;
 }
 
 /**
  * Single-sided ID-1 student library card: a live preview plus a print button.
- * The QR encodes the student's roll number so scanning it at the desk finds the
- * member through the existing student search.
+ *
+ * Identification only. The QR carries nothing but the roll number — scanning it
+ * at the desk finds the member through the existing student search, and what
+ * they have on loan is read from the system rather than written on the card.
  */
-export default function StudentCard({
-  student,
-  loans = [],
-}: {
-  student: Student;
-  loans?: CardLoan[];
-}) {
+export default function StudentCard({ student }: { student: Student }) {
   const payload = student.roll_no || student.id;
   const [cached, setCached] = useState<{ payload: string; url: string } | null>(null);
   // keyed by payload so a stale QR is never shown for the next student opened
@@ -178,7 +142,7 @@ export default function StudentCard({
           &ldquo;Fit to page&rdquo;) and turn <b>off</b> &ldquo;Headers and footers&rdquo; &mdash; otherwise the
           card won&rsquo;t come out at true licence size. Cut along the dashed line. This banner never prints.
         </div>
-        <div class="slot">${cardHtml(student, loans, qr)}</div>
+        <div class="slot">${cardHtml(student, qr)}</div>
         <script>window.onload = () => { window.print(); }</script>
       </body>
     </html>`);
@@ -191,7 +155,7 @@ export default function StudentCard({
       <div className="rounded-2xl border border-mist-deep bg-paper p-4">
         <style dangerouslySetInnerHTML={{ __html: CARD_CSS }} />
         {qr ? (
-          <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: cardHtml(student, loans, qr) }} />
+          <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: cardHtml(student, qr) }} />
         ) : (
           <div className="mx-auto animate-pulse rounded-xl bg-mist" style={{ width: "54mm", height: "85.6mm" }} />
         )}
