@@ -24,19 +24,15 @@ const CARD_CSS = `
   color:#faa61a; margin-top:.5mm; }
 
 /* identity, full width now that nothing competes for the space */
-.sc .id { flex:none; padding:3.2mm 3.5mm 2mm; }
+.sc .id { flex:none; padding:3mm 3.5mm 1.8mm; }
 .sc .name { font-size:11px; font-weight:800; color:#06377b; line-height:1.15;
   display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
   overflow:hidden; overflow-wrap:anywhere; }
-.sc .field { margin-top:1.8mm; }
+.sc .field { margin-top:1.5mm; }
 .sc .k { display:block; font-size:4.8px; letter-spacing:.7px; text-transform:uppercase; color:#6a778c; }
 .sc .v { display:block; font-size:7px; font-weight:700; color:#12203a; line-height:1.25;
   display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
   overflow:hidden; overflow-wrap:anywhere; }
-.sc .pill { display:inline-block; margin-top:2mm; padding:.6mm 2mm; border-radius:3mm;
-  font-size:5.2px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; }
-.sc .pill.ok { background:#dcfce7; color:#15803d; }
-.sc .pill.no { background:#fee2e2; color:#b91c1c; }
 
 /* the scan target — large, because a worn card reads badly at 19mm */
 .sc .qr { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -54,7 +50,6 @@ const CARD_CSS = `
 function cardHtml(student: Student, qr: string) {
   const memberSince = new Date(student.created_at).getFullYear();
   const cardNo = (student.roll_no || student.id.slice(0, 8)).toUpperCase();
-  const active = student.status === "active";
 
   return `<div class="sc">
     <div class="head">
@@ -72,7 +67,10 @@ function cardHtml(student: Student, qr: string) {
         <span class="k">Class / Dept</span>
         <span class="v">${escapeHtml(student.class_dept ?? "—")}</span>
       </div>
-      <span class="pill ${active ? "ok" : "no"}">${active ? "Active" : "Blocked"}</span>
+      <div class="field">
+        <span class="k">Member since</span>
+        <span class="v">${memberSince}</span>
+      </div>
     </div>
 
     <div class="qr">
@@ -82,7 +80,7 @@ function cardHtml(student: Student, qr: string) {
     </div>
 
     <div class="foot">
-      Member since ${memberSince} · Property of Central College Library<br />
+      Property of Central College Library<br />
       <span class="lost">If found, please return it to the library</span>
     </div>
   </div>`;
@@ -94,6 +92,11 @@ function cardHtml(student: Student, qr: string) {
  * Identification only. The QR carries nothing but the roll number — scanning it
  * at the desk finds the member through the existing student search, and what
  * they have on loan is read from the system rather than written on the card.
+ *
+ * Nothing here can go out of date: name, roll number, department and join year
+ * are fixed for the life of the card. Borrowing status deliberately is not on
+ * it — a blocked student would still be holding a card that said "Active".
+ * The block is enforced at the desk, where it is always current.
  */
 export default function StudentCard({ student }: { student: Student }) {
   const payload = student.roll_no || student.id;
