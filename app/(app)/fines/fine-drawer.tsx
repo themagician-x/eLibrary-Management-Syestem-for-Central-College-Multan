@@ -58,6 +58,7 @@ export default function FineDrawer({
   if (!current) return null;
   const f = current;
   const ctx = f as unknown as FineContext;
+  const book = f.book ?? f.loan?.book ?? null;
 
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={`${f.reason} charge`}>
@@ -110,19 +111,23 @@ export default function FineDrawer({
             </StudentPeek>
           </div>
 
-          {f.loan?.book && (
-            <div>
-              <p className="mb-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Book</p>
+          <div>
+            <p className="mb-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Book</p>
+            {book ? (
               <BookPeek
-                bookId={f.loan.book.id}
+                bookId={book.id}
                 className="group block w-full rounded-xl border border-mist-deep bg-paper px-4 py-3 text-left transition-colors hover:border-navy-600"
               >
                 <span className="block truncate text-sm font-semibold text-navy-900 group-hover:text-navy-700">
-                  {f.loan.book.title}
+                  {book.title}
                 </span>
               </BookPeek>
-            </div>
-          )}
+            ) : (
+              <p className="rounded-xl border border-dashed border-mist-deep bg-paper px-4 py-3 text-sm text-ink-mute">
+                No book recorded on this charge.
+              </p>
+            )}
+          </div>
 
           <div>
             <p className="mb-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Why this charge</p>

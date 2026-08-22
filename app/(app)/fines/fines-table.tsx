@@ -53,7 +53,7 @@ export default function FinesTable({ fines }: { fines: FineWithRefs[] }) {
                 {f.reason}
               </span>
               <span className="mt-0.5 block truncate text-xs text-ink-mute">
-                {f.loan?.book?.title ?? f.note ?? ""}
+                {f.book?.title ?? f.loan?.book?.title ?? f.note ?? "No book recorded"}
               </span>
             </span>
 

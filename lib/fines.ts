@@ -5,6 +5,8 @@ const DAY = 86_400_000;
 
 /** A fine together with the loan it came from, when there is one. */
 export type FineContext = Fine & {
+  /** Set directly on the charge; survives the loan being deleted. */
+  book?: { id: string; title: string } | null;
   loan:
     | {
         issued_at: string;
@@ -42,7 +44,9 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
  */
 export function explainFine(fine: FineContext): FineExplanation {
   const loan = fine.loan;
-  const book = loan?.book ?? null;
+  // prefer the book recorded on the charge itself — a loan can be deleted, and
+  // a hand-raised charge may name a book without one
+  const book = fine.book ?? loan?.book ?? null;
   const amount = Number(fine.amount);
 
   const timeline: { label: string; value: string }[] = [];

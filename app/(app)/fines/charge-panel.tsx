@@ -3,7 +3,7 @@
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { studentLookup } from "@/lib/search";
+import { studentLookup, bookLookup } from "@/lib/search";
 import { useToast } from "@/components/Toast";
 import { money } from "@/lib/config";
 import AsyncPicker, { type PickOption } from "@/components/AsyncPicker";
@@ -17,6 +17,7 @@ export default function ChargePanel() {
   const router = useRouter();
   const toast = useToast();
   const [student, setStudent] = useState<PickOption | null>(null);
+  const [book, setBook] = useState<PickOption | null>(null);
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState<"lost" | "damaged">("lost");
   const [note, setNote] = useState("");
@@ -40,10 +41,25 @@ export default function ChargePanel() {
     }));
   }, []);
 
+  const searchBooks = useCallback(async (term: string): Promise<PickOption[]> => {
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("books")
+      .select("id,title,author,barcode")
+      .or(bookLookup(term))
+      .order("title")
+      .limit(8);
+    return (data ?? []).map((b) => ({
+      id: b.id,
+      label: b.title,
+      sub: [b.author, b.barcode].filter(Boolean).join(" · "),
+    }));
+  }, []);
+
   async function submit() {
     if (!student || !amount) return;
     setPending(true);
-    const res = await addCharge(student.id, Number(amount), reason, note);
+    const res = await addCharge(student.id, Number(amount), reason, note, book?.id ?? null);
     setPending(false);
     if (res.error) {
       toast.error("Couldn't add the charge", res.error);
@@ -51,9 +67,12 @@ export default function ChargePanel() {
     }
     toast.success(
       "Charge added",
-      `${money(Number(amount))} for a ${reason} book, on ${student.label}'s account.`
+      book
+        ? `${money(Number(amount))} for ${book.label} (${reason}), on ${student.label}'s account.`
+        : `${money(Number(amount))} for a ${reason} book, on ${student.label}'s account.`
     );
     setStudent(null);
+    setBook(null);
     setAmount("");
     setNote("");
     startRefresh(() => router.refresh());
@@ -65,6 +84,18 @@ export default function ChargePanel() {
         <div className="sm:col-span-2">
           <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-ink-soft">Student</label>
           <AsyncPicker placeholder="Search name or roll no…" search={searchStudents} selected={student} onPick={setStudent} onClear={() => setStudent(null)} />
+        </div>
+        <div className="sm:col-span-2">
+          <label className="mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-ink-soft">
+            Book <span className="font-medium normal-case tracking-normal text-ink-mute">— so the charge says what it was for</span>
+          </label>
+          <AsyncPicker
+            placeholder="Scan barcode or search title…"
+            search={searchBooks}
+            selected={book}
+            onPick={setBook}
+            onClear={() => setBook(null)}
+          />
         </div>
         <div>
           <label htmlFor="amount" className="mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-ink-soft">Amount (Rs)</label>

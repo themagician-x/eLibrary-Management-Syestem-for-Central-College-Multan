@@ -102,7 +102,9 @@ export default function StudentDrawer({
           supabase.from("loans").select("*", { count: "exact", head: true }).eq("student_id", id),
           supabase
             .from("fines")
-            .select("*, loan:loans(issued_at,due_at,returned_at,renew_count,book:books(id,title))")
+            .select(
+              "*, book:books(id,title), loan:loans(issued_at,due_at,returned_at,renew_count,book:books(id,title))"
+            )
             .eq("student_id", id)
             .order("created_at", { ascending: false }),
           supabase
@@ -352,10 +354,10 @@ export default function StudentDrawer({
                       </span>
                     </div>
 
-                    {f.loan?.book && (
-                      <BookPeek bookId={f.loan.book.id} className="group mt-1.5 block min-w-0 text-left">
+                    {(f.book ?? f.loan?.book) && (
+                      <BookPeek bookId={(f.book ?? f.loan?.book)!.id} className="group mt-1.5 block min-w-0 text-left">
                         <span className="block truncate text-sm font-semibold text-navy-900 group-hover:text-navy-700">
-                          {f.loan.book.title}
+                          {(f.book ?? f.loan?.book)!.title}
                         </span>
                       </BookPeek>
                     )}

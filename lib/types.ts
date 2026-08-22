@@ -55,6 +55,8 @@ export type Fine = {
   id: string;
   student_id: string;
   loan_id: string | null;
+  /** The book the charge is about, kept independently of the loan. */
+  book_id: string | null;
   amount: number;
   reason: FineReason;
   status: FineStatus;
@@ -65,6 +67,7 @@ export type Fine = {
 
 export type FineWithRefs = Fine & {
   student: Pick<Student, "id" | "name" | "roll_no"> | null;
+  book: Pick<Book, "id" | "title"> | null;
   loan: { book: Pick<Book, "id" | "title"> | null } | null;
 };
 

@@ -99,13 +99,16 @@ await rest("loans", { method: "POST", body: JSON.stringify(loanRows) });
 console.log(`Inserted ${loanRows.length} loans (${active.length} active, ${returned.length} returned).`);
 
 // ---------- fines ----------
+// every charge names the book it is about, the way the app records them
 const fines = [
-  { student_id: studId["2020-CS-088"], amount: 1500, reason: "lost", status: "unpaid", note: "Lost: Operating System Concepts" },
-  { student_id: studId["2021-CS-045"], amount: 20, reason: "late", status: "unpaid", note: "4 day(s) late" },
-  { student_id: studId["2023-CS-002"], amount: 15, reason: "late", status: "paid", note: "3 day(s) late" },
-  { student_id: studId["2023-ENG-005"], amount: 200, reason: "damaged", status: "waived", note: "Torn pages, waived" },
+  { roll: "2020-CS-088", title: "Operating System Concepts", amount: 1500, reason: "lost", status: "unpaid", note: "Lost: Operating System Concepts" },
+  { roll: "2021-CS-045", title: "Sapiens: A Brief History of Humankind", amount: 20, reason: "late", status: "unpaid", note: "4 day(s) late" },
+  { roll: "2023-CS-002", title: "Introduction to Algorithms", amount: 15, reason: "late", status: "paid", note: "3 day(s) late" },
+  { roll: "2023-ENG-005", title: "To Kill a Mockingbird", amount: 200, reason: "damaged", status: "waived", note: "Torn pages, waived" },
 ];
-await rest("fines", { method: "POST", body: JSON.stringify(fines) });
+await rest("fines", { method: "POST", body: JSON.stringify(
+  fines.map(({ roll, title, ...f }) => ({ ...f, student_id: studId[roll], book_id: bookId[title] }))
+) });
 console.log(`Inserted ${fines.length} fines.`);
 
 // ---------- reservations ----------

@@ -23,7 +23,7 @@ export default async function FinesPage({
   let query = supabase
     .from("fines")
     .select(
-      "*, student:students(id,name,roll_no), loan:loans(issued_at,due_at,returned_at,renew_count,book:books(id,title))",
+      "*, student:students(id,name,roll_no), book:books(id,title), loan:loans(issued_at,due_at,returned_at,renew_count,book:books(id,title))",
       { count: "exact" }
     )
     .order("created_at", { ascending: false });

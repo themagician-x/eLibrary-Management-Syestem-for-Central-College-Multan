@@ -15,7 +15,8 @@ export async function addCharge(
   studentId: string,
   amount: number,
   reason: "lost" | "damaged",
-  note: string
+  note: string,
+  bookId?: string | null
 ): Promise<ActionResult> {
   if (!studentId) return { error: "Pick a student." };
   if (!amount || amount <= 0) return { error: "Enter a valid amount." };
@@ -26,6 +27,8 @@ export async function addCharge(
     amount,
     reason,
     note: note || null,
+    // so the charge can always say which book it was for
+    book_id: bookId || null,
   });
   if (error) return { error: error.message };
   revalidate(studentId);
