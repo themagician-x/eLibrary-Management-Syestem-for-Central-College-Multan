@@ -48,7 +48,12 @@ const CARD_CSS = `
 `;
 
 function cardHtml(student: Student, qr: string) {
-  const memberSince = new Date(student.created_at).getFullYear();
+  // full date, matching how dates read everywhere else in the app
+  const memberSince = new Date(student.created_at).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
   const cardNo = (student.roll_no || student.id.slice(0, 8)).toUpperCase();
 
   return `<div class="sc">
@@ -93,7 +98,7 @@ function cardHtml(student: Student, qr: string) {
  * at the desk finds the member through the existing student search, and what
  * they have on loan is read from the system rather than written on the card.
  *
- * Nothing here can go out of date: name, roll number, department and join year
+ * Nothing here can go out of date: name, roll number, department and join date
  * are fixed for the life of the card. Borrowing status deliberately is not on
  * it — a blocked student would still be holding a card that said "Active".
  * The block is enforced at the desk, where it is always current.
