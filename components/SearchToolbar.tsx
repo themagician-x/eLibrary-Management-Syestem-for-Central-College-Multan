@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Select, { type SelectOption } from "@/components/Select";
 
@@ -34,7 +34,6 @@ export default function SearchToolbar({
     Object.fromEntries(filters.map((f) => [f.name, f.value]))
   );
   const [pending, start] = useTransition();
-  const skipFirst = useRef(true);
 
   function push(nextText: string, nextValues: Record<string, string>) {
     const params = new URLSearchParams();
@@ -47,16 +46,15 @@ export default function SearchToolbar({
     start(() => router.replace(qs ? `${basePath}?${qs}` : basePath, { scroll: false }));
   }
 
-  // debounce typing
+  // Debounce typing. Comparing against the URL's own `q` means a mount with no
+  // edit pushes nothing — important because `push` drops `page`, so a stray
+  // push would silently bounce the admin back to page 1 of the list.
   useEffect(() => {
-    if (skipFirst.current) {
-      skipFirst.current = false;
-      return;
-    }
+    if (text.trim() === q.trim()) return;
     const h = setTimeout(() => push(text, values), 250);
     return () => clearTimeout(h);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [text]);
+  }, [text, q]);
 
   const active = Boolean(text.trim() || Object.values(values).some(Boolean));
 

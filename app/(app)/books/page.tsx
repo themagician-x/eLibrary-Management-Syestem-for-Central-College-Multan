@@ -4,6 +4,7 @@ import PageShell from "@/components/PageShell";
 import SearchToolbar from "@/components/SearchToolbar";
 import { createClient } from "@/lib/supabase/server";
 import { parseSearch, orFilter } from "@/lib/search";
+import Pagination, { PAGE_SIZE, pageFrom, rangeFor } from "@/components/Pagination";
 import type { Book } from "@/lib/types";
 import BooksTable from "./books-table";
 
@@ -12,14 +13,18 @@ export const metadata: Metadata = { title: "Books" };
 export default async function BooksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; shelf?: string; availability?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; shelf?: string; availability?: string; page?: string }>;
 }) {
-  const { q = "", category = "", shelf = "", availability = "" } = await searchParams;
+  const { q = "", category = "", shelf = "", availability = "", page: pageParam } = await searchParams;
+  const page = pageFrom(pageParam);
   const supabase = await createClient();
 
   const search = parseSearch(q);
 
-  let query = supabase.from("books").select("*").order("created_at", { ascending: false });
+  let query = supabase
+    .from("books")
+    .select("*", { count: "exact" })
+    .order("created_at", { ascending: false });
   const filter = orFilter(search.terms, ["title", "author", "isbn"]);
   if (filter) query = query.or(filter);
   if (category) query = query.eq("category", category);
@@ -27,10 +32,14 @@ export default async function BooksPage({
   if (availability === "available") query = query.gt("available_copies", 0);
   else if (availability === "out") query = query.eq("available_copies", 0);
 
+  const [from, to] = rangeFor(page);
+
   // too many terms: show the message rather than a misleading empty result
-  const { data: books, error } = search.error
-    ? { data: [], error: null }
-    : await query;
+  const { data: books, error, count } = search.error
+    ? { data: [], error: null, count: 0 }
+    : await query.range(from, to);
+
+  const total = count ?? 0;
 
   // distinct categories and shelves for the filters — read from the whole
   // catalogue, not the filtered page, so the options don't vanish as you narrow
@@ -48,7 +57,7 @@ export default async function BooksPage({
       title="Books"
       subtitle="The library catalogue."
       fill
-      badge={`${list.length} ${list.length === 1 ? "book" : "books"}`}
+      badge={`${total.toLocaleString()} ${total === 1 ? "book" : "books"}`}
       actions={
         <div className="flex flex-wrap gap-2">
           <Link href="/books/import" className="rounded-xl border border-navy-900 px-4 py-2 text-sm font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream">
@@ -112,7 +121,7 @@ export default async function BooksPage({
       />
 
       {/* results */}
-      {list.length === 0 ? (
+      {total === 0 ? (
         <div className="rounded-2xl border border-dashed border-mist-deep bg-paper p-12 text-center">
           <p className="font-display text-lg font-semibold text-navy-900">
             {filtering ? "No books match your search." : "No books yet."}
@@ -127,7 +136,16 @@ export default async function BooksPage({
           )}
         </div>
       ) : (
-        <BooksTable books={list} />
+        <>
+          <BooksTable books={list} />
+          <Pagination
+            page={page}
+            total={total}
+            basePath="/books"
+            params={{ q, category, shelf, availability }}
+            noun="book"
+          />
+        </>
       )}
     </PageShell>
   );

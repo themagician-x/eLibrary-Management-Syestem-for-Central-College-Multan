@@ -7,6 +7,7 @@ import { getSettings } from "@/lib/settings";
 import type { FineWithRefs } from "@/lib/types";
 import TableScroll from "@/components/TableScroll";
 import StudentPeek from "@/components/StudentPeek";
+import Pagination, { pageFrom, rangeFor } from "@/components/Pagination";
 import FineActions from "./fine-actions";
 
 export const metadata: Metadata = { title: "Fines" };
@@ -27,26 +28,30 @@ const statusStyle: Record<string, string> = {
 export default async function FinesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; page?: string }>;
 }) {
-  const { status = "unpaid" } = await searchParams;
+  const { status = "unpaid", page: pageParam } = await searchParams;
+  const page = pageFrom(pageParam);
   const supabase = await createClient();
   const { fine_per_day } = await getSettings();
 
   let query = supabase
     .from("fines")
-    .select("*, student:students(id,name,roll_no), loan:loans(book:books(id,title))")
+    .select("*, student:students(id,name,roll_no), loan:loans(book:books(id,title))", { count: "exact" })
     .order("created_at", { ascending: false });
   if (["unpaid", "paid", "waived"].includes(status)) query = query.eq("status", status);
 
-  const [{ data, error }, { data: unpaidRows }, { data: paidRows }, { count: totalFines }] = await Promise.all([
-    query,
+  const [from, to] = rangeFor(page);
+
+  const [{ data, error, count }, { data: unpaidRows }, { data: paidRows }, { count: totalFines }] = await Promise.all([
+    query.range(from, to),
     supabase.from("fines").select("amount").eq("status", "unpaid"),
     supabase.from("fines").select("amount").eq("status", "paid"),
     supabase.from("fines").select("*", { count: "exact", head: true }),
   ]);
 
   const fines = (data ?? []) as unknown as FineWithRefs[];
+  const total = count ?? 0;
   const outstanding = (unpaidRows ?? []).reduce((s, r) => s + Number(r.amount), 0);
   const collected = (paidRows ?? []).reduce((s, r) => s + Number(r.amount), 0);
 
@@ -100,7 +105,7 @@ export default async function FinesPage({
         </div>
       )}
 
-      {fines.length === 0 ? (
+      {total === 0 ? (
         <div className="rounded-2xl border border-dashed border-mist-deep bg-paper p-12 text-center">
           <p className="font-display text-lg font-semibold text-navy-900">
             {status === "unpaid" ? "No outstanding fines. 🎉" : "Nothing here."}
@@ -136,6 +141,16 @@ export default async function FinesPage({
             </div>
           ))}
         </TableScroll>
+      )}
+
+      {total > 0 && (
+        <Pagination
+          page={page}
+          total={total}
+          basePath="/fines"
+          params={{ status }}
+          noun="charge"
+        />
       )}
     </PageShell>
   );

@@ -6,6 +6,7 @@ import type { ReservationWithRefs } from "@/lib/types";
 import BookPeek from "@/components/BookPeek";
 import StudentPeek from "@/components/StudentPeek";
 import TableScroll from "@/components/TableScroll";
+import Pagination, { pageFrom, rangeFor } from "@/components/Pagination";
 import ReservationActions from "./reservation-actions";
 
 export const metadata: Metadata = { title: "Reservations" };
@@ -15,42 +16,69 @@ const fmt = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "2-dig
 export default async function ReservationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; page?: string }>;
 }) {
-  const { filter = "active" } = await searchParams;
+  const { filter = "active", page: pageParam } = await searchParams;
+  const page = pageFrom(pageParam);
   const history = filter === "history";
   const supabase = await createClient();
 
   const statuses = history ? ["fulfilled", "cancelled"] : ["waiting", "ready"];
-  const { data, error } = await supabase
-    .from("reservations")
-    .select("*, book:books(id,title,author,available_copies), student:students(id,name,roll_no)")
-    .in("status", statuses)
-    .order("created_at", { ascending: true });
+  const [from, to] = rangeFor(page);
+
+  // Queue position is a rank across the whole queue, so it cannot be counted
+  // from one page of rows. Two ids per waiting hold is cheap to fetch in full,
+  // and ranking them here keeps "3rd in queue" true on every page.
+  const [{ data, error, count }, { count: readyTotal }, { data: waitingRows }] =
+    await Promise.all([
+      supabase
+        .from("reservations")
+        .select(
+          "*, book:books(id,title,author,available_copies), student:students(id,name,roll_no)",
+          { count: "exact" }
+        )
+        .in("status", statuses)
+        .order("created_at", { ascending: true })
+        .range(from, to),
+      supabase
+        .from("reservations")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "ready"),
+      history
+        ? Promise.resolve({ data: [] })
+        : supabase
+            .from("reservations")
+            .select("id,book_id")
+            .eq("status", "waiting")
+            .order("created_at", { ascending: true }),
+    ]);
 
   const list = (data ?? []) as unknown as ReservationWithRefs[];
+  const total = count ?? 0;
 
-  // queue position per book among 'waiting'
-  const counter: Record<string, number> = {};
-  const rows = list.map((r) => {
-    let position = 0;
-    if (r.status === "waiting") { counter[r.book_id] = (counter[r.book_id] ?? 0) + 1; position = counter[r.book_id]; }
-    return { r, position };
-  });
+  // rank every waiting hold once, then look each visible row up by id
+  const rank: Record<string, number> = {};
+  const perBook: Record<string, number> = {};
+  for (const w of (waitingRows ?? []) as { id: string; book_id: string }[]) {
+    perBook[w.book_id] = (perBook[w.book_id] ?? 0) + 1;
+    rank[w.id] = perBook[w.book_id];
+  }
+
+  const rows = list.map((r) => ({ r, position: rank[r.id] ?? 0 }));
   if (!history) {
     rows.sort((a, b) => (a.r.status === "ready" ? 0 : 1) - (b.r.status === "ready" ? 0 : 1));
   } else {
     rows.reverse();
   }
 
-  const readyCount = list.filter((r) => r.status === "ready").length;
+  const readyCount = readyTotal ?? 0;
 
   return (
     <PageShell
       title="Reservations"
       subtitle="Holds and the waiting queue."
       fill
-      badge={`${list.length} ${list.length === 1 ? "hold" : "holds"}`}
+      badge={`${total.toLocaleString()} ${total === 1 ? "hold" : "holds"}`}
       actions={
         <Link href="/reservations/new" className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">
           + Place a hold
@@ -77,7 +105,7 @@ export default async function ReservationsPage({
           </div>
         )}
 
-        {rows.length === 0 ? (
+        {total === 0 ? (
           <div className="rounded-2xl border border-dashed border-mist-deep bg-paper p-12 text-center">
             <p className="font-display text-lg font-semibold text-navy-900">{history ? "No past reservations." : "No active holds."}</p>
             <p className="mt-1.5 text-sm text-ink-mute">{history ? "Fulfilled and cancelled holds will appear here." : "Place a hold above for a book that's currently out."}</p>
@@ -118,6 +146,16 @@ export default async function ReservationsPage({
               </div>
             ))}
           </TableScroll>
+        )}
+
+        {total > 0 && (
+          <Pagination
+            page={page}
+            total={total}
+            basePath="/reservations"
+            params={{ filter: history ? "history" : undefined }}
+            noun="hold"
+          />
         )}
       </div>
     </PageShell>

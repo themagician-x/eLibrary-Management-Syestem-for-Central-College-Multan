@@ -7,6 +7,7 @@ import type { LoanWithRefs } from "@/lib/types";
 import BookPeek from "@/components/BookPeek";
 import StudentPeek from "@/components/StudentPeek";
 import TableScroll from "@/components/TableScroll";
+import Pagination, { pageFrom, rangeFor } from "@/components/Pagination";
 import LoanActions from "./loan-actions";
 
 export const metadata: Metadata = { title: "Circulation" };
@@ -28,30 +29,40 @@ const fmt = (d: string) =>
 export default async function CirculationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; page?: string }>;
 }) {
-  const { filter = "" } = await searchParams;
+  const { filter = "", page: pageParam } = await searchParams;
+  const page = pageFrom(pageParam);
   const nowIso = new Date().toISOString();
   const supabase = await createClient();
   const settings = await getSettings();
 
   let query = supabase
     .from("loans")
-    .select("*, book:books(id,title,author,barcode,cover_url), student:students(id,name,roll_no)")
+    .select("*, book:books(id,title,author,barcode,cover_url), student:students(id,name,roll_no)", { count: "exact" })
     .is("returned_at", null)
     .order("due_at", { ascending: true });
 
   if (filter === "overdue") query = query.lt("due_at", nowIso);
 
-  const [{ data, error }, { count: onLoanCount }] = await Promise.all([
-    query,
-    supabase.from("loans").select("*", { count: "exact", head: true }).is("returned_at", null),
-  ]);
-  const loans = (data ?? []) as unknown as LoanWithRefs[];
+  const [from, to] = rangeFor(page);
 
-  // one cutoff for the whole request, so every row is judged against the same instant
-  const now = new Date(nowIso);
-  const overdueCount = loans.filter((l) => new Date(l.due_at) < now).length;
+  // the two tab counts are whole-set totals, so they can't be derived from a
+  // single page of rows — each needs its own exact count
+  const [{ data, error, count }, { count: onLoanCount }, { count: overdueTotal }] =
+    await Promise.all([
+      query.range(from, to),
+      supabase.from("loans").select("*", { count: "exact", head: true }).is("returned_at", null),
+      supabase
+        .from("loans")
+        .select("*", { count: "exact", head: true })
+        .is("returned_at", null)
+        .lt("due_at", nowIso),
+    ]);
+
+  const loans = (data ?? []) as unknown as LoanWithRefs[];
+  const total = count ?? 0;
+  const overdueCount = overdueTotal ?? 0;
 
   return (
     <PageShell
@@ -73,7 +84,7 @@ export default async function CirculationPage({
           </h2>
           <div className="flex items-center gap-1 rounded-xl border border-mist-deep bg-paper p-1 text-sm font-semibold">
             <Link href="/circulation" className={`rounded-lg px-3 py-1.5 ${filter !== "overdue" ? "bg-navy-900 text-cream" : "text-ink-soft hover:bg-mist"}`}>
-              All{filter !== "overdue" ? ` (${loans.length})` : ""}
+              All{filter !== "overdue" ? ` (${onLoanCount ?? 0})` : ""}
             </Link>
             <Link href="/circulation?filter=overdue" className={`rounded-lg px-3 py-1.5 ${filter === "overdue" ? "bg-danger text-white" : "text-ink-soft hover:bg-mist"}`}>
               Overdue{overdueCount > 0 ? ` (${overdueCount})` : ""}
@@ -87,7 +98,7 @@ export default async function CirculationPage({
           </div>
         )}
 
-        {loans.length === 0 ? (
+        {total === 0 ? (
           <div className="rounded-2xl border border-dashed border-mist-deep bg-paper p-12 text-center">
             <p className="font-display text-lg font-semibold text-navy-900">
               {filter === "overdue" ? "Nothing overdue. 🎉" : "No books are on loan."}
@@ -131,6 +142,16 @@ export default async function CirculationPage({
               );
             })}
           </TableScroll>
+        )}
+
+        {total > 0 && (
+          <Pagination
+            page={page}
+            total={total}
+            basePath="/circulation"
+            params={{ filter }}
+            noun="loan"
+          />
         )}
       </div>
     </PageShell>
