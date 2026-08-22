@@ -372,10 +372,14 @@ export default async function GuidePage() {
           id="finding"
           n="11"
           title="Finding things"
-          lead="Search and filters work the same way on every list."
+          lead="Search and filters work the same way on every list — and one shortcut reaches everything at once."
         >
           <Facts
             rows={[
+              [
+                "Quick search",
+                "Press Cmd + K (Ctrl + K on Windows) anywhere in the app for a search box over the page. Type part of a title, a name, a roll number or a barcode and results appear as you type. Arrow keys move, Enter opens, Escape closes. It also jumps to any page and starts any common job — issuing a book, adding a student, raising a fine.",
+              ],
               ["Searching", "Type and the list narrows as you go — no button to press."],
               ["Several at once", "Separate terms with commas to search for up to five at a time: “Ahmed, Fatima, Bilal” finds all three. More than five and it will tell you."],
               ["Filters", "The dropdowns beside the search box narrow further and combine with it."],

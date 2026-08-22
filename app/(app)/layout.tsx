@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/Sidebar";
 import { ToastProvider } from "@/components/Toast";
+import CommandPalette from "@/components/CommandPalette";
 
 export default async function AppLayout({
   children,
@@ -25,6 +26,7 @@ export default async function AppLayout({
         <main className="min-w-0 flex-1">{children}</main>
         {modal}
       </div>
+      <CommandPalette />
     </ToastProvider>
   );
 }
