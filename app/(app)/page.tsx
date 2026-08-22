@@ -71,7 +71,7 @@ export default async function Dashboard() {
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* needs attention */}
-        <section className="rounded-2xl border border-mist-deep bg-paper p-6">
+        <section className="min-w-0 rounded-2xl border border-mist-deep bg-paper p-6">
           <h2 className="mb-4 font-display text-lg font-semibold text-navy-900">Needs attention</h2>
 
           <div className="mb-2 flex items-center justify-between">
@@ -118,7 +118,7 @@ export default async function Dashboard() {
         </section>
 
         {/* most borrowed */}
-        <section className="rounded-2xl border border-mist-deep bg-paper p-6">
+        <section className="min-w-0 rounded-2xl border border-mist-deep bg-paper p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-lg font-semibold text-navy-900">Most borrowed</h2>
             <Link href="/reports" className="text-xs font-semibold text-gold-700 hover:text-navy-900">All reports</Link>

@@ -9,6 +9,17 @@
 //
 // Inline links inside a sentence are reported but are not faults — WCAG 2.5.8
 // exempts them, and padding them would break the line rhythm of the paragraph.
+//
+// Overflow is measured against the DEVICE width, never window.innerWidth. Two
+// traps make the obvious check useless:
+//
+//   1. `overflow-x: clip/hidden` on html swallows the overflow, so
+//      scrollWidth - clientWidth reads 0 while content really is too wide.
+//   2. When content does not fit, the layout viewport STRETCHES to hold it.
+//      innerWidth then equals scrollWidth and the page looks fine — while on a
+//      real phone the whole app is zoomed out and scrolls sideways.
+//
+// A dashboard section 421px wide on a 320px phone hid behind both at once.
 import { chromium } from "playwright";
 import { adminCredentials } from "../lib/admin-credentials.mjs";
 
@@ -39,15 +50,20 @@ for (const width of WIDTHS) {
   for (const path of t.paths) {
     await page.goto(t.base + path, { waitUntil: "networkidle" }).catch(() => {});
     await page.waitForTimeout(350);
-    const r = await page.evaluate(() => {
-      const vw = document.documentElement.clientWidth;
-      const overflow = document.documentElement.scrollWidth - vw;
+    const r = await page.evaluate((deviceWidth) => {
+      // the viewport stretches to fit overflowing content, so compare against
+      // the device, and always scan — never gate the scan on the doc measure
+      const vw = deviceWidth;
+      const overflow = Math.max(
+        document.documentElement.scrollWidth - vw,
+        window.innerWidth - vw
+      );
       const culprits = [];
-      if (overflow > 1) {
+      {
         for (const el of document.querySelectorAll("body *")) {
           const b = el.getBoundingClientRect();
-          if (b.width === 0 || b.height === 0) return;
-          if (b.right > vw + 1 || b.left < -1) {
+          if (b.width === 0 || b.height === 0) continue;
+          if (b.width > vw + 1 || b.right > vw + 1 || b.left < -1) {
             const cs = getComputedStyle(el);
             if (cs.position === "fixed" || cs.overflowX === "auto" || cs.overflowX === "scroll") continue;
             let p = el.parentElement, inScroller = false;
@@ -67,7 +83,7 @@ for (const width of WIDTHS) {
           small.push(`${el.tagName.toLowerCase()} "${(el.textContent||"").trim().slice(0,24)}" ${Math.round(b.width)}x${Math.round(b.height)}`);
       }
       return { overflow, culprits: [...new Set(culprits)].slice(0, 4), small: [...new Set(small)].slice(0, 3) };
-    }).catch(() => null);
+    }, width).catch(() => null);
     if (!r) continue;
     if (r.overflow > 1) findings.push({ width, path, kind: "overflow", detail: `+${r.overflow}px`, culprits: r.culprits });
     if (width <= 414 && r.small.length) findings.push({ width, path, kind: "tap-target", culprits: r.small });

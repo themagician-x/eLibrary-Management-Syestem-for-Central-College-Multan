@@ -38,7 +38,12 @@
 }
 
 html {
-  overflow-x: hidden;
+  /* `clip`, not `hidden`. Two reasons: hidden forces the computed overflow-y to
+     auto, which makes the page its own scroll container and stops the mobile
+     header sticking; and it silently swallows real overflow, which is how a
+     421px-wide dashboard section went unnoticed on a 320px phone. clip cuts
+     stray decoration without either side effect. */
+  overflow-x: clip;
 }
 
 /* Tailwind v4 no longer defaults buttons to a pointer cursor — restore it */
