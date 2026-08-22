@@ -36,32 +36,31 @@ export default function DashboardHero({
     >
       <HeroPattern />
 
-      <div className="relative flex h-full flex-col gap-7 sm:min-h-[10.5rem] sm:justify-between">
+      <div className="relative flex flex-col gap-6 sm:gap-7">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
-          <h1 className="max-w-xl font-display text-[1.6rem] font-semibold leading-[1.15] tracking-[-0.01em] text-cream sm:text-[2rem]">
-            {lead} <span className="text-gold-400">{tail}</span>
-          </h1>
+          <div className="max-w-xl">
+            <h1 className="font-display text-[1.6rem] font-semibold leading-[1.15] tracking-[-0.01em] text-cream sm:text-[2rem]">
+              {lead} <span className="text-gold-400">{tail}</span>
+            </h1>
+            <p className="mt-2.5 text-sm leading-relaxed text-navy-100/65">
+              <span className="block">
+                Catalogue, students, circulation, fines and holds — all in one calm view.
+              </span>
+              <span className="block text-navy-100/85">{desk(overdue, readyHolds)}</span>
+            </p>
+          </div>
           <p className="pt-1.5 font-mono text-[0.6rem] uppercase tracking-[0.11em] text-navy-100/50 tabular-nums">
             {stampAt(now)}
           </p>
         </div>
 
-        <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-5">
-          <p className="max-w-lg text-sm leading-relaxed text-navy-100/65">
-            <span className="block">
-              Catalogue, students, circulation, fines and holds — all in one calm view.
-            </span>
-            <span className="block text-navy-100/85">{desk(overdue, readyHolds)}</span>
-          </p>
-
-          <div className="flex flex-wrap gap-2">
-            <Action href="/circulation/issue" primary icon={<IconIssue />}>
-              Issue a book
-            </Action>
-            <Action href="/books/new" icon={<IconPlus />}>Add book</Action>
-            <Action href="/students/new" icon={<IconStudent />}>Add student</Action>
-            <Action href="/guide" icon={<IconGuide />}>Guide</Action>
-          </div>
+        <div className="flex flex-wrap gap-2 sm:justify-end">
+          <Action href="/circulation/issue" primary icon={<IconIssue />}>
+            Issue a book
+          </Action>
+          <Action href="/books/new" icon={<IconPlus />}>Add book</Action>
+          <Action href="/students/new" icon={<IconStudent />}>Add student</Action>
+          <Action href="/guide" icon={<IconGuide />}>Guide</Action>
         </div>
       </div>
     </section>
