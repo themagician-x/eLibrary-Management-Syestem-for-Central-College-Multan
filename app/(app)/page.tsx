@@ -1,5 +1,5 @@
 import Link from "next/link";
-import PageShell from "@/components/PageShell";
+import DashboardHero from "@/components/DashboardHero";
 import BarList from "@/components/BarList";
 import StudentPeek from "@/components/StudentPeek";
 import { createClient } from "@/lib/supabase/server";
@@ -52,9 +52,15 @@ export default async function Dashboard() {
   ];
 
   return (
-    <PageShell title="Dashboard" subtitle="Central College Library at a glance.">
+    <div className="mx-auto max-w-6xl px-5 py-6 sm:px-8 sm:py-7">
+      <DashboardHero
+        nowIso={nowIso}
+        overdue={overdue ?? 0}
+        readyHolds={readyHolds ?? 0}
+      />
+
       {/* KPI tiles */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {tiles.map((t) => (
           <Link key={t.label} href={t.href} className={`rounded-2xl border p-4 transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(5,31,66,0.07)] ${t.alert ? "border-danger/25 bg-danger-soft" : t.good ? "border-ok/25 bg-ok-soft" : "border-mist-deep bg-paper"}`}>
             <p className="font-mono text-[0.56rem] uppercase tracking-[0.12em] text-ink-mute">{t.label}</p>
@@ -120,6 +126,6 @@ export default async function Dashboard() {
           <BarList items={topItems} emptyLabel="No loans recorded yet." />
         </section>
       </div>
-    </PageShell>
+    </div>
   );
 }
