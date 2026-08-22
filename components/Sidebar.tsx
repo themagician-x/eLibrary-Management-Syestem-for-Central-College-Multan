@@ -33,11 +33,6 @@ export default function Sidebar({ email }: { email: string }) {
               {item.icon}
             </span>
             <span className="flex-1">{item.label}</span>
-            {item.milestone && !active && (
-              <span className="rounded-full bg-navy-800 px-1.5 py-0.5 font-mono text-[0.55rem] tracking-wider text-navy-100/45">
-                {item.milestone}
-              </span>
-            )}
           </Link>
         );
       })}
