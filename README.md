@@ -28,7 +28,8 @@ Built with **Next.js 16** (App Router), **Tailwind CSS v4**, and **Supabase**
 
 Since M7: lost/damaged write-offs with inventory tracking, per-action
 confirmations, fine breakdowns showing how each amount was reached, a full
-student record drawer, pagination, and a hardening pass (see **Security notes**).
+student record drawer, pagination, an in-app **Guide** for the librarian, and a
+hardening pass (see **Security notes**).
 
 There is **no notifications or email feature, and none is planned** — the
 library works from the screen, and a book's status is read there rather than

@@ -72,6 +72,13 @@ export const nav: NavItem[] = [
     ),
   },
   {
+    href: "/guide",
+    label: "Guide",
+    icon: (
+      <svg viewBox="0 0 24 24" {...s}><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2v13a1.6 1.6 0 0 0-1.6-1.6H5.5A1.5 1.5 0 0 1 4 15.9V5.5Z" /><path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H14a2 2 0 0 0-2 2v13a1.6 1.6 0 0 1 1.6-1.6h4.9a1.5 1.5 0 0 0 1.5-1.5V5.5Z" /></svg>
+    ),
+  },
+  {
     href: "/settings",
     label: "Settings",
     milestone: "M7",
