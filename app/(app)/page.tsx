@@ -76,7 +76,7 @@ export default async function Dashboard() {
 
           <div className="mb-2 flex items-center justify-between">
             <p className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-ink-mute">Overdue books</p>
-            {overdues.length > 0 && <Link href="/circulation?filter=overdue" className="text-xs font-semibold text-gold-700 hover:text-navy-900">View all</Link>}
+            {overdues.length > 0 && <Link href="/circulation?filter=overdue" className="-my-1.5 shrink-0 py-1.5 pl-2 text-xs font-semibold text-gold-700 hover:text-navy-900">View all</Link>}
           </div>
           {overdues.length === 0 ? (
             <p className="rounded-xl bg-ok-soft px-4 py-3 text-sm font-medium text-ok">Nothing overdue. 🎉</p>
@@ -98,7 +98,7 @@ export default async function Dashboard() {
 
           <div className="mb-2 mt-6 flex items-center justify-between">
             <p className="font-mono text-[0.6rem] uppercase tracking-[0.12em] text-ink-mute">Ready for pickup</p>
-            {readies.length > 0 && <Link href="/reservations" className="text-xs font-semibold text-gold-700 hover:text-navy-900">View all</Link>}
+            {readies.length > 0 && <Link href="/reservations" className="-my-1.5 shrink-0 py-1.5 pl-2 text-xs font-semibold text-gold-700 hover:text-navy-900">View all</Link>}
           </div>
           {readies.length === 0 ? (
             <p className="rounded-xl bg-mist px-4 py-3 text-sm text-ink-mute">No holds waiting for pickup.</p>
@@ -121,7 +121,7 @@ export default async function Dashboard() {
         <section className="min-w-0 rounded-2xl border border-mist-deep bg-paper p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display text-lg font-semibold text-navy-900">Most borrowed</h2>
-            <Link href="/reports" className="text-xs font-semibold text-gold-700 hover:text-navy-900">All reports</Link>
+            <Link href="/reports" className="-my-1.5 shrink-0 py-1.5 pl-2 text-xs font-semibold text-gold-700 hover:text-navy-900">All reports</Link>
           </div>
           <BarList items={topItems} emptyLabel="No loans recorded yet." />
         </section>
