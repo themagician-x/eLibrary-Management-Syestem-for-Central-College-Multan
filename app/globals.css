@@ -91,6 +91,15 @@ video {
   font-variant-numeric: tabular-nums;
 }
 
+/* still scrolls, but the bar stays out of the way */
+.no-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 h1,
 h2,
 h3 {

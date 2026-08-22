@@ -173,7 +173,7 @@ export default function CommandPalette() {
     <>
       {open && typeof document !== "undefined" &&
         createPortal(
-          <div className="fixed inset-0 z-[80] flex items-start justify-center p-4 pt-[12vh]" role="dialog" aria-modal="true" aria-label="Search">
+          <div className="fixed inset-0 z-[80] flex items-start justify-center p-4 pt-[12vh] lg:pt-[13.25rem]" role="dialog" aria-modal="true" aria-label="Search">
             <div className="absolute inset-0 bg-navy-950/45" onClick={close} />
 
             <div className="relative flex w-full max-w-xl flex-col overflow-hidden rounded-2xl bg-cream shadow-[0_28px_90px_rgba(5,31,66,0.45)]">
@@ -196,7 +196,7 @@ export default function CommandPalette() {
               </div>
 
               {/* results */}
-              <div ref={listRef} className="max-h-[52vh] overflow-y-auto overscroll-contain p-2">
+              <div ref={listRef} className="no-scrollbar max-h-[min(52vh,calc(100dvh-19rem))] overflow-y-auto overscroll-contain p-2">
                 {items.length === 0 ? (
                   <p className="px-3 py-8 text-center text-sm text-ink-mute">
                     {loading ? "Searching…" : <>Nothing matches <span className="font-semibold text-navy-900">{q}</span>.</>}
