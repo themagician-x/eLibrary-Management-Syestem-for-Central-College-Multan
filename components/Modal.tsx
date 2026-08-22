@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ModalProvider } from "@/components/unsaved";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 /**
  * Route-driven modal for intercepting routes. Full-screen on mobile (reads as a
@@ -28,6 +29,7 @@ export default function Modal({
   const router = useRouter();
   const dirtyRef = useRef(false);
   const [shown, setShown] = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
   const setDirty = useCallback((d: boolean) => {
     dirtyRef.current = d;
@@ -46,7 +48,8 @@ export default function Modal({
 
   // user-initiated close (overlay / esc / ×) — guarded when there are edits
   const requestClose = useCallback(() => {
-    if (dirtyRef.current && !window.confirm("You have unsaved changes. Discard them and close?")) {
+    if (dirtyRef.current) {
+      setConfirming(true);
       return;
     }
     dismiss();
@@ -54,13 +57,17 @@ export default function Modal({
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") requestClose();
+      // while the discard prompt is up it owns Escape
+      if (e.key === "Escape" && !confirming) requestClose();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [requestClose]);
+  }, [requestClose, confirming]);
 
-  const ctx = useMemo(() => ({ setDirty, close: dismiss }), [setDirty, dismiss]);
+  const ctx = useMemo(
+    () => ({ setDirty, close: dismiss, requestClose }),
+    [setDirty, dismiss, requestClose]
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label={title}>
@@ -91,6 +98,20 @@ export default function Modal({
           <ModalProvider value={ctx}>{children}</ModalProvider>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirming}
+        tone="warn"
+        title="Discard your changes?"
+        description={<>Anything you&rsquo;ve typed here will be lost. This can&rsquo;t be undone.</>}
+        confirmLabel="Discard"
+        cancelLabel="Keep editing"
+        onCancel={() => setConfirming(false)}
+        onConfirm={() => {
+          setConfirming(false);
+          dismiss();
+        }}
+      />
     </div>
   );
 }

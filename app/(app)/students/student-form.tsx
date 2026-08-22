@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Select from "@/components/Select";
-import { useModal, useBeforeUnload } from "@/components/unsaved";
+import { useModal, useFormDirty } from "@/components/unsaved";
 import type { Student } from "@/lib/types";
 import type { StudentFormState } from "./actions";
 
@@ -31,19 +31,10 @@ export default function StudentForm({
 
   const [name, setName] = useState(student?.name ?? "");
 
-  const { setDirty: setDirtyCtx, close } = useModal();
-  const [dirty, setDirty] = useState(false);
-  useBeforeUnload(dirty);
-  const markDirty = () => {
-    if (!dirty) {
-      setDirty(true);
-      setDirtyCtx(true);
-    }
-  };
-  const clearDirty = () => {
-    setDirty(false);
-    setDirtyCtx(false);
-  };
+  const { setDirty: setDirtyCtx, close, requestClose } = useModal();
+  // compares against the values the form opened with, so clearing a field
+  // you just typed leaves nothing to warn about
+  const { ref: formRef, check: markDirty, reset: clearDirty } = useFormDirty();
 
   useEffect(() => {
     if (state.ok) {
@@ -57,7 +48,7 @@ export default function StudentForm({
   const v = (k: keyof Student) => (student?.[k] ?? "") as string;
 
   return (
-    <form action={formAction} onInput={markDirty} onSubmit={clearDirty} className="grid gap-8 lg:grid-cols-[200px_1fr]">
+    <form ref={formRef} action={formAction} onInput={markDirty} onChange={markDirty} onSubmit={clearDirty} className="grid gap-8 lg:grid-cols-[200px_1fr]">
       {/* identity */}
       <div>
         <span className={label}>Student</span>
@@ -119,7 +110,7 @@ export default function StudentForm({
         <button type="submit" disabled={pending} className="rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-cream transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-60">
           {pending ? "Saving…" : submitLabel}
         </button>
-        <button type="button" onClick={() => (close ? close() : router.push("/students"))} className="rounded-xl px-5 py-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
+        <button type="button" onClick={() => (requestClose ? requestClose() : router.push("/students"))} className="rounded-xl px-5 py-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
           Cancel
         </button>
       </div>

@@ -4,7 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Combobox from "@/components/Combobox";
-import { useModal, useBeforeUnload } from "@/components/unsaved";
+import { useModal, useFormDirty } from "@/components/unsaved";
 import type { Book, BookInput } from "@/lib/types";
 import type { BookFormState } from "./actions";
 
@@ -47,19 +47,14 @@ export default function BookForm({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [category, setCategory] = useState((book?.category ?? "") as string);
 
-  const { setDirty: setDirtyCtx, close } = useModal();
-  const [dirty, setDirty] = useState(false);
-  useBeforeUnload(dirty);
-  const markDirty = () => {
-    if (!dirty) {
-      setDirty(true);
-      setDirtyCtx(true);
-    }
-  };
-  const clearDirty = () => {
-    setDirty(false);
-    setDirtyCtx(false);
-  };
+  const { setDirty: setDirtyCtx, close, requestClose } = useModal();
+  // compares against the values the form opened with, so clearing a field
+  // you just typed leaves nothing to warn about
+  const { ref: formRef, check: markDirty, reset: clearDirty } = useFormDirty();
+
+  // the category combobox and the cover buttons write to hidden inputs, which
+  // fire no form event — re-check once React has committed the new value
+  const markDirtySoon = () => setTimeout(markDirty, 0);
 
   // on a successful create, close the modal (or navigate on the standalone page)
   useEffect(() => {
@@ -76,7 +71,6 @@ export default function BookForm({
     if (!file) return;
     setUploadError(null);
     setUploading(true);
-    markDirty();
     try {
       const supabase = createClient();
       const ext = file.name.split(".").pop() || "jpg";
@@ -87,6 +81,7 @@ export default function BookForm({
       if (error) throw error;
       const { data } = supabase.storage.from("book-covers").getPublicUrl(path);
       setCoverUrl(data.publicUrl);
+      markDirtySoon();
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : "Upload failed.");
     } finally {
@@ -97,7 +92,7 @@ export default function BookForm({
   const v = (k: keyof BookInput) => (book?.[k as keyof Book] ?? "") as string | number;
 
   return (
-    <form action={formAction} onInput={markDirty} onSubmit={clearDirty} className="grid gap-8 lg:grid-cols-[240px_1fr]">
+    <form ref={formRef} action={formAction} onInput={markDirty} onChange={markDirty} onSubmit={clearDirty} className="grid gap-8 lg:grid-cols-[240px_1fr]">
       {/* cover column */}
       <div>
         <span className={label}>Cover</span>
@@ -120,7 +115,7 @@ export default function BookForm({
           <input type="file" accept="image/*" onChange={onCoverChange} disabled={uploading} className="hidden" />
         </label>
         {coverUrl && (
-          <button type="button" onClick={() => setCoverUrl(null)} className="mt-2 w-full text-center text-xs text-ink-mute hover:text-danger">
+          <button type="button" onClick={() => { setCoverUrl(null); markDirtySoon(); }} className="mt-2 w-full text-center text-xs text-ink-mute hover:text-danger">
             Remove cover
           </button>
         )}
@@ -157,7 +152,10 @@ export default function BookForm({
               id="category"
               name="category"
               value={category}
-              onChange={setCategory}
+              onChange={(v) => {
+                setCategory(v);
+                markDirtySoon();
+              }}
               suggestions={categoryOptions}
               createLabel="Add"
               placeholder="Pick one or type your own"
@@ -193,7 +191,7 @@ export default function BookForm({
         <button type="submit" disabled={pending || uploading} className="rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-cream transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-60">
           {pending ? "Saving…" : submitLabel}
         </button>
-        <button type="button" onClick={() => (close ? close() : router.push("/books"))} className="rounded-xl px-5 py-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
+        <button type="button" onClick={() => (requestClose ? requestClose() : router.push("/books"))} className="rounded-xl px-5 py-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
           Cancel
         </button>
       </div>
