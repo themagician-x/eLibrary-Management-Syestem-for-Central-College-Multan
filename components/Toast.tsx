@@ -99,8 +99,12 @@ function ToastViewport({
 
   return createPortal(
     <div
-      // sits above the modal (z-50) and the confirm dialog (z-70)
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[100] flex flex-col items-center gap-2 p-4 sm:items-end sm:p-6"
+      // Top right, offset clear of the page header's action buttons (which sit
+      // at roughly y 52–90) so a confirmation never covers "+ Add book". The
+      // bottom-right corner is where pagination lives, and that gets clicked
+      // repeatedly while working through a list — exactly when toasts fire.
+      // Above the modal (z-50) and the confirm dialog (z-70).
+      className="pointer-events-none fixed inset-x-0 top-4 z-[100] flex flex-col items-center gap-2 px-4 lg:top-24 lg:items-end lg:px-6"
     >
       {toasts.map((t) => (
         <ToastCard key={t.id} toast={t} onDismiss={onDismiss} />
@@ -136,7 +140,7 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: number)
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       className={`pointer-events-auto flex w-full max-w-sm gap-3 overflow-hidden rounded-xl border border-mist-deep bg-paper pr-3 shadow-[0_12px_40px_rgba(5,31,66,0.18)] transition-all duration-200 motion-reduce:transition-none ${
-        shown ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+        shown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
       }`}
     >
       <span className={`w-1 flex-none ${tone.stripe}`} aria-hidden="true" />

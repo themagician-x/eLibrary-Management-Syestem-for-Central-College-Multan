@@ -6,7 +6,6 @@ import StudentPeek from "@/components/StudentPeek";
 import { createClient } from "@/lib/supabase/server";
 import { money } from "@/lib/config";
 import type { WriteOffWithRefs } from "@/lib/types";
-import PrintButton from "./print-button";
 
 export const metadata: Metadata = { title: "Reports" };
 
@@ -77,11 +76,7 @@ export default async function ReportsPage() {
   }));
 
   return (
-    <PageShell
-      title="Reports"
-      subtitle="A snapshot of the library."
-      actions={<PrintButton />}
-    >
+    <PageShell title="Reports" subtitle="A snapshot of the library.">
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {kpis.map((k) => (
