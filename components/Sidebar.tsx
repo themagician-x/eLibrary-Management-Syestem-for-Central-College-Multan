@@ -45,8 +45,8 @@ export default function Sidebar({ email }: { email: string }) {
         <Image src="/central-logo-mark.png" alt="" width={34} height={34} className="h-full w-full object-contain" />
       </span>
       <span className="leading-tight">
-        <span className="block font-display text-[0.98rem] font-semibold text-cream">Central Library</span>
-        <span className="block font-mono text-[0.55rem] uppercase tracking-[0.2em] text-navy-100/50">Management System</span>
+        <span className="block font-display text-[0.98rem] font-semibold text-cream">Central College</span>
+        <span className="block font-mono text-[0.55rem] uppercase tracking-[0.2em] text-navy-100/50">Library System</span>
       </span>
     </Link>
   );
@@ -84,7 +84,7 @@ export default function Sidebar({ email }: { email: string }) {
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy-950 p-1.5">
             <Image src="/central-logo-mark.png" alt="" width={28} height={28} className="h-full w-full object-contain" />
           </span>
-          <span className="font-display text-sm font-semibold text-navy-900">Central Library</span>
+          <span className="font-display text-sm font-semibold text-navy-900">Central College Library</span>
         </Link>
         <button
           type="button"
