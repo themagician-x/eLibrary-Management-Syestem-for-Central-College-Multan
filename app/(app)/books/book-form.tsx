@@ -103,7 +103,10 @@ export default function BookForm({
       <div>
         <span className={label}>Cover</span>
         <input type="hidden" name="cover_url" value={coverUrl ?? ""} />
-        <div className="aspect-[3/4] w-full overflow-hidden rounded-2xl border border-mist-deep bg-mist">
+        {/* side by side on a phone so the placeholder cannot eat the screen;
+            the column layout from lg keeps it stacked as before */}
+        <div className="flex items-start gap-4 lg:block">
+        <div className="aspect-[3/4] w-28 flex-none overflow-hidden rounded-2xl border border-mist-deep bg-mist sm:w-32 lg:w-full">
           {coverUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={coverUrl} alt="Cover preview" className="h-full w-full object-cover" />
@@ -114,18 +117,21 @@ export default function BookForm({
             </div>
           )}
         </div>
-        <label className="mt-3 block">
-          <span className="flex cursor-pointer items-center justify-center rounded-xl border border-navy-900 px-4 py-2 text-xs font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream">
-            {uploading ? "Uploading…" : coverUrl ? "Change cover" : "Upload cover"}
-          </span>
-          <input type="file" accept="image/*" onChange={onCoverChange} disabled={uploading} className="hidden" />
-        </label>
-        {coverUrl && (
-          <button type="button" onClick={() => { setCoverUrl(null); markDirtySoon(); }} className="mt-2 w-full text-center text-xs text-ink-mute hover:text-danger">
-            Remove cover
-          </button>
-        )}
-        {uploadError && <p className="mt-2 text-xs text-danger">{uploadError}</p>}
+        <div className="min-w-0 flex-1 lg:mt-3">
+          <label className="block">
+            <span className="flex cursor-pointer items-center justify-center rounded-xl border border-navy-900 px-4 py-2.5 text-xs font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream">
+              {uploading ? "Uploading…" : coverUrl ? "Change cover" : "Upload cover"}
+            </span>
+            <input type="file" accept="image/*" onChange={onCoverChange} disabled={uploading} className="hidden" />
+          </label>
+          {coverUrl && (
+            <button type="button" onClick={() => { setCoverUrl(null); markDirtySoon(); }} className="mt-2 w-full py-1.5 text-center text-xs text-ink-mute hover:text-danger">
+              Remove cover
+            </button>
+          )}
+          {uploadError && <p className="mt-2 text-xs text-danger">{uploadError}</p>}
+        </div>
+        </div>
       </div>
 
       {/* fields column */}
