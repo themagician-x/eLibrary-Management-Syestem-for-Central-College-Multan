@@ -50,7 +50,9 @@ export default async function StudentProfilePage({
     due_at: string;
     book: { id: string; title: string; author: string | null } | null;
   }[];
-  const overdue = loans.filter((l) => new Date(l.due_at).getTime() < Date.now()).length;
+  // one cutoff for the whole request, so the count and the row badges agree
+  const now = new Date();
+  const overdue = loans.filter((l) => new Date(l.due_at) < now).length;
 
   const meta: [string, string | null][] = [
     ["Roll number", s.roll_no],
@@ -75,7 +77,7 @@ export default async function StudentProfilePage({
         {/* identity card */}
         <div className="rounded-2xl border border-mist-deep bg-paper p-6 text-center">
           <div className="mx-auto w-fit">
-            <Avatar name={s.name} src={s.photo_url} size={112} />
+            <Avatar name={s.name} size={112} />
           </div>
           <h2 className="mt-4 font-display text-xl font-semibold text-navy-900">{s.name}</h2>
           {s.roll_no && <p className="mt-1 font-mono text-sm text-ink-mute">{s.roll_no}</p>}
@@ -120,7 +122,7 @@ export default async function StudentProfilePage({
             {loans.length > 0 && (
               <div className="mt-4 overflow-hidden rounded-2xl border border-mist-deep">
                 {loans.map((l) => {
-                  const isOverdue = new Date(l.due_at).getTime() < Date.now();
+                  const isOverdue = new Date(l.due_at) < now;
                   return (
                     <Link key={l.id} href={`/books/${l.book?.id}`} className="flex items-center justify-between gap-3 border-b border-mist bg-paper px-4 py-3 last:border-0 hover:bg-mist/50">
                       <span className="min-w-0">

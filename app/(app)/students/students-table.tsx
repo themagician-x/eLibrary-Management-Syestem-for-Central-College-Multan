@@ -28,7 +28,7 @@ export default function StudentsTable({ students }: { students: Student[] }) {
             className="grid cursor-pointer grid-cols-[1fr_auto] items-center gap-4 border-b border-mist bg-paper px-5 py-3 transition-colors last:border-0 hover:bg-cream sm:grid-cols-[1fr_140px_140px_100px_80px]"
           >
             <span className="flex min-w-0 items-center gap-3">
-              <Avatar name={s.name} src={s.photo_url} size={40} />
+              <Avatar name={s.name} size={40} />
               <span className="min-w-0">
                 <span className="block truncate font-semibold text-navy-900">{s.name}</span>
                 <span className="block truncate text-xs text-ink-mute">{s.email ?? "No email"}</span>

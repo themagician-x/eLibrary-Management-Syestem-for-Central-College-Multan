@@ -1,6 +1,12 @@
 // End-to-end check of M4 fines. Run: node --env-file=.env.local scripts/m4-e2e.mjs
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
+import { adminCredentials } from "../lib/admin-credentials.mjs";
+import { assertTestProject } from "../lib/test-guard.mjs";
+
+assertTestProject();
+
+const ADMIN = adminCredentials();
 
 const BASE = "http://localhost:3000";
 const U = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,7 +26,7 @@ mkdirSync("scripts/shots", { recursive: true });
 await cleanup();
 
 // seed: a book (1 copy, currently out), a student, and an overdue open loan
-const [book] = await (await rest("books", { method: "POST", body: JSON.stringify({ title: "Fine Book", author: "FINE", total_copies: 1, available_copies: 0, barcode: bc() }) })).json();
+const [book] = await (await rest("books", { method: "POST", body: JSON.stringify({ title: "Fine Book", author: "FINE", total_copies: 1, barcode: bc() }) })).json();
 const [stud] = await (await rest("students", { method: "POST", body: JSON.stringify({ name: "Fine Tester", roll_no: "FT-1", status: "active" }) })).json();
 await rest("loans", { method: "POST", body: JSON.stringify({
   book_id: book.id, student_id: stud.id,
@@ -36,8 +42,8 @@ const bad = (m) => { console.log("  ✗ " + m); failed = true; };
 
 // login
 await page.goto(BASE + "/login", { waitUntil: "networkidle" });
-await page.fill('input[name="email"]', "admin@central.edu.pk");
-await page.fill('input[name="password"]', "***REMOVED-ROTATED-CREDENTIAL***");
+await page.fill('input[name="email"]', ADMIN.email);
+await page.fill('input[name="password"]', ADMIN.password);
 await page.click('button[type="submit"]');
 await page.waitForURL(BASE + "/", { timeout: 8000 }).catch(() => {});
 ok("logged in");

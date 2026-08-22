@@ -6,6 +6,7 @@ import { money } from "@/lib/config";
 import { getSettings } from "@/lib/settings";
 import type { FineWithRefs } from "@/lib/types";
 import TableScroll from "@/components/TableScroll";
+import StudentPeek from "@/components/StudentPeek";
 import FineActions from "./fine-actions";
 
 export const metadata: Metadata = { title: "Fines" };
@@ -34,7 +35,7 @@ export default async function FinesPage({
 
   let query = supabase
     .from("fines")
-    .select("*, student:students(id,name,roll_no,photo_url), loan:loans(book:books(id,title))")
+    .select("*, student:students(id,name,roll_no), loan:loans(book:books(id,title))")
     .order("created_at", { ascending: false });
   if (["unpaid", "paid", "waived"].includes(status)) query = query.eq("status", status);
 
@@ -69,7 +70,7 @@ export default async function FinesPage({
       }
     >
       {/* summary */}
-      <div className="mb-8 grid shrink-0 gap-4 sm:grid-cols-3">
+      <div className="mb-5 grid shrink-0 gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-danger/25 bg-danger-soft p-5">
           <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-danger/80">Outstanding</p>
           <p className="mt-2 font-display text-3xl font-semibold text-danger">{money(outstanding)}</p>
@@ -85,7 +86,7 @@ export default async function FinesPage({
       </div>
 
       {/* filter tabs */}
-      <div className="mb-5 flex w-full shrink-0 items-center gap-1 rounded-xl border border-mist-deep bg-paper p-1 text-sm font-semibold">
+      <div className="mb-4 flex w-full shrink-0 items-center gap-1 rounded-xl border border-mist-deep bg-paper p-1 text-sm font-semibold">
         {tabs.map((t) => (
           <Link key={t.key} href={`/fines?status=${t.key}`} className={`flex-1 rounded-lg px-3.5 py-1.5 text-center ${status === t.key ? "bg-navy-900 text-cream" : "text-ink-soft hover:bg-mist"}`}>
             {t.label}
@@ -116,10 +117,10 @@ export default async function FinesPage({
         >
           {fines.map((f) => (
             <div key={f.id} className="grid grid-cols-1 gap-2 border-b border-mist bg-paper px-5 py-3.5 last:border-0 lg:grid-cols-[1.3fr_1fr_100px_110px_190px] lg:items-center lg:gap-4">
-              <Link href={`/students/${f.student?.id}`} className="min-w-0">
-                <span className="block truncate font-semibold text-navy-900">{f.student?.name ?? "Unknown"}</span>
+              <StudentPeek studentId={f.student?.id} className="group min-w-0 text-left">
+                <span className="block truncate font-semibold text-navy-900 group-hover:text-navy-700">{f.student?.name ?? "Unknown"}</span>
                 <span className="block truncate text-xs text-ink-mute">{f.student?.roll_no ?? ""}</span>
-              </Link>
+              </StudentPeek>
               <span className="min-w-0">
                 <span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold capitalize ${reasonStyle[f.reason]}`}>{f.reason}</span>
                 <span className="mt-0.5 block truncate text-xs text-ink-mute">{f.loan?.book?.title ?? f.note ?? ""}</span>

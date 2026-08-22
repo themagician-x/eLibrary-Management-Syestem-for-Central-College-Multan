@@ -2,6 +2,9 @@
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { adminCredentials } from "../lib/admin-credentials.mjs";
+
+const ADMIN = adminCredentials();
 
 const BASE = "http://localhost:3000";
 mkdirSync("scripts/shots", { recursive: true });
@@ -13,8 +16,8 @@ const bad = (m) => { console.log("  ✗ " + m); failed = true; };
 
 // login
 await page.goto(BASE + "/login", { waitUntil: "networkidle" });
-await page.fill('input[name="email"]', "admin@central.edu.pk");
-await page.fill('input[name="password"]', "***REMOVED-ROTATED-CREDENTIAL***");
+await page.fill('input[name="email"]', ADMIN.email);
+await page.fill('input[name="password"]', ADMIN.password);
 await page.click('button[type="submit"]');
 await page.waitForURL(BASE + "/", { timeout: 8000 }).catch(() => {});
 ok("logged in");
@@ -29,7 +32,7 @@ await page.goto(BASE + "/students/new", { waitUntil: "networkidle" });
 await page.fill('input[name="name"]', "Ayesha Khan");
 await page.fill('input[name="roll_no"]', "2024-CS-014");
 await page.fill('input[name="class_dept"]', "BS Computer Science");
-await page.fill('input[name="email"]', "ayesha@example.com");
+await page.fill('input[name="email"]', ADMIN.email);
 await page.setInputFiles('input[type="file"]', resolve("scripts/fixtures/cover.png"));
 await page.getByText("Change photo").waitFor({ timeout: 10000 }).catch(() => {});
 await page.getByRole("button", { name: "Add student" }).click();

@@ -26,7 +26,6 @@ export type Student = {
   class_dept: string | null;
   email: string | null;
   phone: string | null;
-  photo_url: string | null;
   status: StudentStatus;
   created_at: string;
   updated_at: string;
@@ -46,7 +45,7 @@ export type Loan = {
 /** A loan joined with its book and student, as fetched for display. */
 export type LoanWithRefs = Loan & {
   book: Pick<Book, "id" | "title" | "author" | "barcode" | "cover_url"> | null;
-  student: Pick<Student, "id" | "name" | "roll_no" | "photo_url"> | null;
+  student: Pick<Student, "id" | "name" | "roll_no"> | null;
 };
 
 export type FineReason = "late" | "lost" | "damaged";
@@ -65,7 +64,7 @@ export type Fine = {
 };
 
 export type FineWithRefs = Fine & {
-  student: Pick<Student, "id" | "name" | "roll_no" | "photo_url"> | null;
+  student: Pick<Student, "id" | "name" | "roll_no"> | null;
   loan: { book: Pick<Book, "id" | "title"> | null } | null;
 };
 
@@ -82,7 +81,27 @@ export type Reservation = {
 
 export type ReservationWithRefs = Reservation & {
   book: Pick<Book, "id" | "title" | "author" | "available_copies"> | null;
-  student: Pick<Student, "id" | "name" | "roll_no" | "photo_url"> | null;
+  student: Pick<Student, "id" | "name" | "roll_no"> | null;
+};
+
+export type WriteOffReason = "lost" | "damaged";
+
+/** A copy retired from the inventory because it was lost or damaged beyond use. */
+export type WriteOff = {
+  id: string;
+  book_id: string;
+  loan_id: string | null;
+  student_id: string | null;
+  fine_id: string | null;
+  reason: WriteOffReason;
+  note: string | null;
+  charge: number;
+  created_at: string;
+};
+
+export type WriteOffWithRefs = WriteOff & {
+  book: Pick<Book, "id" | "title" | "author"> | null;
+  student: Pick<Student, "id" | "name" | "roll_no"> | null;
 };
 
 /** Fields the admin edits in the book form. */

@@ -1,6 +1,12 @@
 // End-to-end check of M5 reservations. Run: node --env-file=.env.local scripts/m5-e2e.mjs
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
+import { adminCredentials } from "../lib/admin-credentials.mjs";
+import { assertTestProject } from "../lib/test-guard.mjs";
+
+assertTestProject();
+
+const ADMIN = adminCredentials();
 
 const BASE = "http://localhost:3000";
 const U = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -20,7 +26,7 @@ async function cleanup() {
 mkdirSync("scripts/shots", { recursive: true });
 await cleanup();
 
-const [book] = await (await rest("books", { method: "POST", body: JSON.stringify({ title: "Hold Book", author: "HOLD", total_copies: 1, available_copies: 0, barcode: bc() }) })).json();
+const [book] = await (await rest("books", { method: "POST", body: JSON.stringify({ title: "Hold Book", author: "HOLD", total_copies: 1, barcode: bc() }) })).json();
 const studs = await (await rest("students", { method: "POST", body: JSON.stringify([
   { name: "Holder A", roll_no: "HA-1", status: "active" },
   { name: "Holder B", roll_no: "HB-1", status: "active" },
@@ -46,8 +52,8 @@ async function reserve(bookTitle, studentName) {
 
 // login
 await page.goto(BASE + "/login", { waitUntil: "networkidle" });
-await page.fill('input[name="email"]', "admin@central.edu.pk");
-await page.fill('input[name="password"]', "***REMOVED-ROTATED-CREDENTIAL***");
+await page.fill('input[name="email"]', ADMIN.email);
+await page.fill('input[name="password"]', ADMIN.password);
 await page.click('button[type="submit"]');
 await page.waitForURL(BASE + "/", { timeout: 8000 }).catch(() => {});
 ok("logged in");

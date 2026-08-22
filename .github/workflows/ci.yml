@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      # Build needs the public Supabase values to resolve the image host in
+      # next.config.ts. They are the browser-safe pair, never the service key.
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      # Fails the run on a new high or critical advisory in shipped dependencies.
+      - name: Audit dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      # A committed credential is the mistake this repo has already made once.
+      - name: Check for committed secrets
+        run: |
+          # .env.example is excluded: it holds empty placeholders and the
+          # comments that describe them, never a value
+          if git grep -nIE '(eyJ[A-Za-z0-9_-]{20,}|service_role)' -- \
+               ':!*.md' ':!.github/workflows/ci.yml' ':!package-lock.json' ':!.env.example'; then
+            echo "::error::Possible Supabase key committed — remove it and rotate."
+            exit 1
+          fi
+          if git ls-files | grep -iE '\.pdf$'; then
+            echo "::error::A PDF is tracked. Library cards contain student data and must not be committed."
+            exit 1
+          fi

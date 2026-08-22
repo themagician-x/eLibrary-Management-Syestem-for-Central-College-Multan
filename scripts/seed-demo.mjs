@@ -39,11 +39,10 @@ const BOOKS = [
 ];
 const bookRows = BOOKS.map(([title, author, isbn, category, publisher, year, copies, shelf]) => ({
   title, author, isbn, category, publisher, published_year: year, language: "English",
-  total_copies: copies, available_copies: copies, shelf, barcode: bc(), cover_url: cover(isbn),
+  total_copies: copies, shelf, barcode: bc(), cover_url: cover(isbn),
 }));
 const books = await (await rest("books", { method: "POST", body: JSON.stringify(bookRows) })).json();
 const bookId = Object.fromEntries(books.map((b) => [b.title, b.id]));
-const avail = Object.fromEntries(books.map((b) => [b.title, b.total_copies]));
 console.log(`Inserted ${books.length} books.`);
 
 // ---------- students ----------
@@ -90,17 +89,13 @@ const loanRows = [];
 for (const [title, roll, dueInDays, renew] of active) {
   const due = now + dueInDays * DAY;
   loanRows.push({ book_id: bookId[title], student_id: studId[roll], issued_at: iso(due - 14 * DAY), due_at: iso(due), renew_count: renew });
-  avail[title] -= 1;
 }
 for (const [title, roll, issuedAgo, returnedAgo] of returned) {
   const issued = now - issuedAgo * DAY;
   loanRows.push({ book_id: bookId[title], student_id: studId[roll], issued_at: iso(issued), due_at: iso(issued + 14 * DAY), returned_at: iso(now - returnedAgo * DAY) });
 }
 await rest("loans", { method: "POST", body: JSON.stringify(loanRows) });
-// reconcile availability for books with active loans
-for (const title of new Set(active.map((a) => a[0]))) {
-  await rest(`books?id=eq.${bookId[title]}`, { method: "PATCH", body: JSON.stringify({ available_copies: avail[title] }) });
-}
+// availability needs no reconciling — the database derives it from these loans
 console.log(`Inserted ${loanRows.length} loans (${active.length} active, ${returned.length} returned).`);
 
 // ---------- fines ----------

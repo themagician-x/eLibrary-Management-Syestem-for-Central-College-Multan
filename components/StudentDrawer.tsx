@@ -45,6 +45,9 @@ export default function StudentDrawer({
   // mount / slide transition (keep `current` while animating out)
   useEffect(() => {
     if (student) {
+      // Mirroring the prop keeps the outgoing student on screen while the drawer
+      // slides away; the timeout below clears it once the animation finishes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrent(student);
       const r = requestAnimationFrame(() => setShown(true));
       return () => cancelAnimationFrame(r);
@@ -144,7 +147,7 @@ export default function StudentDrawer({
       >
         {/* header — identity stays visible while the body scrolls */}
         <div className="flex items-start gap-3 border-b border-mist-deep px-6 py-5">
-          <Avatar name={s.name} src={s.photo_url} size={52} />
+          <Avatar name={s.name} size={52} />
           <div className="min-w-0 flex-1">
             <h2 className="truncate font-display text-lg font-semibold leading-snug text-navy-900">{s.name}</h2>
             <p className="truncate font-mono text-xs text-ink-mute">{s.roll_no ?? "No roll number"}</p>

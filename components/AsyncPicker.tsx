@@ -23,21 +23,27 @@ export default function AsyncPicker({
   onClear: () => void;
 }) {
   const [term, setTerm] = useState("");
-  const [results, setResults] = useState<PickOption[]>([]);
+  const [fetched, setFetched] = useState<PickOption[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const latest = useRef(0);
 
+  // an empty box shows nothing without having to clear state from an effect
+  const results = term.trim() ? fetched : [];
+
   useEffect(() => {
     if (selected) return;
     const t = term.trim();
-    if (!t) { setResults([]); return; }
+    if (!t) return;
     const id = ++latest.current;
+    // The spinner has to appear as the term changes, before the debounced
+    // request is even sent.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     const h = setTimeout(async () => {
       const r = await search(t);
-      if (id === latest.current) { setResults(r); setOpen(true); setLoading(false); }
+      if (id === latest.current) { setFetched(r); setOpen(true); setLoading(false); }
     }, 180);
     return () => clearTimeout(h);
   }, [term, search, selected]);
@@ -54,8 +60,7 @@ export default function AsyncPicker({
     if (opt.disabled) return;
     onPick(opt);
     setOpen(false);
-    setTerm("");
-    setResults([]);
+    setTerm(""); // clearing the term empties the derived list
   }
 
   if (selected) {

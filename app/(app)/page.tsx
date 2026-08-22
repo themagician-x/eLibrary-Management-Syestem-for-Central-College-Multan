@@ -1,6 +1,7 @@
 import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import BarList from "@/components/BarList";
+import StudentPeek from "@/components/StudentPeek";
 import { createClient } from "@/lib/supabase/server";
 import { money } from "@/lib/config";
 import type { LoanWithRefs, ReservationWithRefs } from "@/lib/types";
@@ -62,7 +63,7 @@ export default async function Dashboard() {
         ))}
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {/* needs attention */}
         <section className="rounded-2xl border border-mist-deep bg-paper p-6">
           <h2 className="mb-4 font-display text-lg font-semibold text-navy-900">Needs attention</h2>
@@ -77,13 +78,13 @@ export default async function Dashboard() {
             <ul className="divide-y divide-mist rounded-xl border border-mist">
               {overdues.map((l) => (
                 <li key={l.id}>
-                  <Link href={`/students/${l.student?.id}`} className="flex items-center justify-between gap-3 px-4 py-2.5 hover:bg-mist/50">
+                  <StudentPeek studentId={l.student?.id} className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left hover:bg-mist/50">
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-navy-900">{l.book?.title}</span>
                       <span className="block truncate text-xs text-ink-mute">{l.student?.name} · {l.student?.roll_no}</span>
                     </span>
                     <span className="flex-none rounded-full bg-danger px-2.5 py-0.5 text-[0.65rem] font-bold text-white">{fmtDue(l.due_at)}</span>
-                  </Link>
+                  </StudentPeek>
                 </li>
               ))}
             </ul>

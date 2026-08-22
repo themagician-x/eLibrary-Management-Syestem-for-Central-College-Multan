@@ -1,6 +1,12 @@
 // End-to-end check of M3 circulation. Run: node --env-file=.env.local scripts/m3-e2e.mjs
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
+import { adminCredentials } from "../lib/admin-credentials.mjs";
+import { assertTestProject } from "../lib/test-guard.mjs";
+
+assertTestProject();
+
+const ADMIN = adminCredentials();
 
 const BASE = "http://localhost:3000";
 const U = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -15,7 +21,7 @@ async function seed() {
   const books = await (await rest("books", {
     method: "POST",
     body: JSON.stringify(
-      [1, 2, 3, 4].map((n) => ({ title: `Loan Book ${n}`, author: "E2E", total_copies: 1, available_copies: 1, barcode: bc() }))
+      [1, 2, 3, 4].map((n) => ({ title: `Loan Book ${n}`, author: "E2E", total_copies: 1, barcode: bc() }))
     ),
   })).json();
   const students = await (await rest("students", {
@@ -54,8 +60,8 @@ async function issue(bookTitle, studentName) {
 
 // login
 await page.goto(BASE + "/login", { waitUntil: "networkidle" });
-await page.fill('input[name="email"]', "admin@central.edu.pk");
-await page.fill('input[name="password"]', "***REMOVED-ROTATED-CREDENTIAL***");
+await page.fill('input[name="email"]', ADMIN.email);
+await page.fill('input[name="password"]', ADMIN.password);
 await page.click('button[type="submit"]');
 await page.waitForURL(BASE + "/", { timeout: 8000 }).catch(() => {});
 ok("logged in");

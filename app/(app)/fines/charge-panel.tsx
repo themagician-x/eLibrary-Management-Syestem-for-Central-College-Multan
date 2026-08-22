@@ -3,6 +3,7 @@
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { studentLookup } from "@/lib/search";
 import { money } from "@/lib/config";
 import AsyncPicker, { type PickOption } from "@/components/AsyncPicker";
 import Select from "@/components/Select";
@@ -28,7 +29,7 @@ export default function ChargePanel() {
     const { data } = await supabase
       .from("students")
       .select("id,name,roll_no,class_dept")
-      .or(`name.ilike.%${term}%,roll_no.ilike.%${term}%`)
+      .or(studentLookup(term))
       .order("name")
       .limit(8);
     return (data ?? []).map((s) => ({

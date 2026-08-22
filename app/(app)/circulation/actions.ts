@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { getSettings } from "@/lib/settings";
+import type { WriteOffReason } from "@/lib/types";
 
 export type ActionResult = { error?: string; fine?: number };
 
@@ -38,6 +39,34 @@ export async function returnLoan(loanId: string): Promise<ActionResult> {
   if (error) return { error: error.message };
   revalidate();
   return { fine: Number(data) || 0 };
+}
+
+/**
+ * Retire the copy this loan is for: the book is lost or damaged beyond use, so
+ * it never returns to the shelf. Closes the loan, drops one copy from the
+ * inventory, and raises the replacement charge as a fine on the borrower.
+ */
+export async function writeOffLoan(
+  bookId: string,
+  loanId: string,
+  reason: WriteOffReason,
+  note: string,
+  charge: number
+): Promise<ActionResult> {
+  if (!bookId || !loanId) return { error: "Missing loan." };
+  if (!Number.isFinite(charge) || charge < 0) return { error: "Enter a valid charge." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("write_off_copy", {
+    p_book_id: bookId,
+    p_loan_id: loanId,
+    p_reason: reason,
+    p_note: note.trim() || null,
+    p_charge: charge,
+  });
+  if (error) return { error: error.message };
+  revalidate();
+  return {};
 }
 
 export async function renewLoan(loanId: string): Promise<ActionResult> {

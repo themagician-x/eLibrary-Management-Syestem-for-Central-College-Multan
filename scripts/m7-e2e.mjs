@@ -2,6 +2,12 @@
 // Run: node --env-file=.env.local scripts/m7-e2e.mjs
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
+import { adminCredentials } from "../lib/admin-credentials.mjs";
+import { assertTestProject } from "../lib/test-guard.mjs";
+
+assertTestProject();
+
+const ADMIN = adminCredentials();
 
 const BASE = "http://localhost:3000";
 const U = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -19,8 +25,8 @@ async function cleanup() {
 
 mkdirSync("scripts/shots", { recursive: true });
 await cleanup();
-const [bookA] = await (await rest("books", { method: "POST", body: JSON.stringify({ title: "Report Book A", author: "RPT", category: "TestCat", total_copies: 2, available_copies: 1, barcode: bc() }) })).json();
-await rest("books", { method: "POST", body: JSON.stringify({ title: "Report Book B", author: "RPT", category: "TestCat", total_copies: 1, available_copies: 1, barcode: bc() }) });
+const [bookA] = await (await rest("books", { method: "POST", body: JSON.stringify({ title: "Report Book A", author: "RPT", category: "TestCat", total_copies: 2, barcode: bc() }) })).json();
+await rest("books", { method: "POST", body: JSON.stringify({ title: "Report Book B", author: "RPT", category: "TestCat", total_copies: 1, barcode: bc() }) });
 const [stud] = await (await rest("students", { method: "POST", body: JSON.stringify({ name: "Report Stud", roll_no: "RS-1", status: "active" }) })).json();
 await rest("loans", { method: "POST", body: JSON.stringify({ book_id: bookA.id, student_id: stud.id, due_at: new Date(Date.now() + 5 * 86400000).toISOString() }) });
 
@@ -32,8 +38,8 @@ const bad = (m) => { console.log("  ✗ " + m); failed = true; };
 
 // login
 await page.goto(BASE + "/login", { waitUntil: "networkidle" });
-await page.fill('input[name="email"]', "admin@central.edu.pk");
-await page.fill('input[name="password"]', "***REMOVED-ROTATED-CREDENTIAL***");
+await page.fill('input[name="email"]', ADMIN.email);
+await page.fill('input[name="password"]', ADMIN.password);
 await page.click('button[type="submit"]');
 await page.waitForURL(BASE + "/", { timeout: 8000 }).catch(() => {});
 ok("logged in");

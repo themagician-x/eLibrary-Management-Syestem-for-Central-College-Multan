@@ -8,6 +8,7 @@ import { useModal, useBeforeUnload } from "@/components/unsaved";
 import type { Book, BookInput } from "@/lib/types";
 import type { BookFormState } from "./actions";
 
+/** Starting points only — anything the admin types becomes a category too. */
 const CATEGORIES = [
   "Fiction", "Non-Fiction", "Reference", "Science", "Mathematics",
   "Computer Science", "Physics", "Chemistry", "Biology", "Economics",
@@ -25,12 +26,20 @@ export default function BookForm({
   action,
   book,
   submitLabel,
+  categories = [],
 }: {
   action: Action;
   book?: Book;
   submitLabel: string;
+  /** Categories already used in the catalogue, so custom ones stay on offer. */
+  categories?: string[];
 }) {
   const router = useRouter();
+
+  // curated defaults first, then anything the library has actually used
+  const categoryOptions = [...new Set([...CATEGORIES, ...categories])].sort((a, b) =>
+    a.localeCompare(b)
+  );
   const [state, formAction, pending] = useActionState(action, {} as BookFormState);
 
   const [coverUrl, setCoverUrl] = useState<string | null>(book?.cover_url ?? null);
@@ -149,8 +158,9 @@ export default function BookForm({
               name="category"
               value={category}
               onChange={setCategory}
-              suggestions={CATEGORIES}
-              placeholder="e.g. Computer Science"
+              suggestions={categoryOptions}
+              createLabel="Add"
+              placeholder="Pick one or type your own"
             />
           </div>
           <div>

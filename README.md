@@ -48,8 +48,48 @@ values from **Dashboard → Project Settings → API**:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY` — **secret**, server-only, never commit
+- `DATABASE_URL` — used only by `scripts/migrate.mjs`
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` — the admin account the `scripts/` use. No
+  script has a default: a missing value stops it rather than falling back to a
+  password that could end up committed.
+- `ALLOW_DESTRUCTIVE_TESTS` — set **only** on a disposable test project; see below.
 
 `.env.local` is gitignored and must never be committed.
+
+## Running the scripts
+
+Every script reads its configuration from the env file, so run them with:
+
+```bash
+node --env-file=.env.local scripts/<name>.mjs
+```
+
+| Script | Does |
+|---|---|
+| `migrate.mjs` | Applies `supabase/migrations/*.sql` in order, tracked in a ledger table |
+| `create-admin.mjs` | Creates or resets the admin user from `ADMIN_EMAIL` / `ADMIN_PASSWORD` |
+| `seed-demo.mjs` | Wipes and reseeds demo data |
+| `m*-e2e.mjs` | Milestone end-to-end suites |
+
+> ⚠️ **The `m3`–`m7` suites delete every loan, fine and reservation** before they
+> run. They refuse to start unless `ALLOW_DESTRUCTIVE_TESTS` matches the project
+> ref in `NEXT_PUBLIC_SUPABASE_URL`. Never set that variable on production.
+
+## Security notes
+
+- **Students have no photograph.** The field and its storage bucket were removed
+  in migration `0011` — the bucket was public, so any photo was fetchable by URL
+  without logging in. Records are identified by name and roll number, with an
+  initials avatar.
+- **Deletes are guarded in the database** (migration `0012`): a student who has
+  books out or owes unpaid fines cannot be deleted, nor can a book whose copies
+  are still on loan. The guard is a trigger, so it holds for the REST API and SQL
+  console too, not just the UI.
+- **Login backs off after repeated failures** (migration `0013`): three free
+  attempts, then 30s, 1m, 2m, 5m, 15m, 30m, 1h. State is server-side, so
+  clearing cookies does not reset it.
+- CI runs typecheck, lint, build and `npm audit`, and fails if a Supabase key or
+  a PDF is ever committed.
 
 ## Stack
 

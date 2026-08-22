@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { Book } from "@/lib/types";
 import DeleteButton from "@/components/DeleteButton";
 import BookLabel from "@/components/BookLabel";
+import BookFacts from "@/components/BookFacts";
 import { deleteBook } from "./actions";
 
 export default function BookDrawer({
@@ -22,6 +23,9 @@ export default function BookDrawer({
   // mount / slide transition (keep `current` while animating out)
   useEffect(() => {
     if (book) {
+      // Mirroring the prop keeps the outgoing book on screen while the drawer
+      // slides away; the timeout below clears it once the animation finishes.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrent(book);
       const r = requestAnimationFrame(() => setShown(true));
       return () => cancelAnimationFrame(r);
@@ -35,6 +39,9 @@ export default function BookDrawer({
   useEffect(() => {
     if (!book) return;
     let alive = true;
+    // Blank the stale count so a reopened drawer never shows the previous
+    // book's queue while the new one is still loading.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setReserved(null);
     const supabase = createClient();
     supabase
@@ -59,15 +66,6 @@ export default function BookDrawer({
 
   if (!current) return null;
   const b = current;
-
-  const meta: [string, string | number | null][] = [
-    ["ISBN", b.isbn],
-    ["Publisher", b.publisher],
-    ["Year", b.published_year],
-    ["Category", b.category],
-    ["Language", b.language],
-    ["Shelf", b.shelf],
-  ];
 
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label={b.title}>
@@ -123,23 +121,8 @@ export default function BookDrawer({
             </div>
           </div>
 
-          {/* metadata */}
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
-            {meta.map(([k, val]) => (
-              <div key={k} className="border-b border-mist pb-3">
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">{k}</dt>
-                <dd className="mt-1 text-sm font-semibold text-navy-900">{val || <span className="font-normal text-ink-mute/60">—</span>}</dd>
-              </div>
-            ))}
-          </dl>
-
-          {/* description */}
-          {b.description && (
-            <div>
-              <p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Description</p>
-              <p className="mt-2 text-sm leading-relaxed text-ink-soft">{b.description}</p>
-            </div>
-          )}
+          {/* every field from the book form */}
+          <BookFacts book={b} />
 
           {/* barcode label */}
           <BookLabel value={b.barcode ?? ""} title={b.title} shelf={b.shelf} />

@@ -72,9 +72,17 @@ export default function ImportBooks() {
     if (res.error) {
       setError(res.error);
     } else {
-      setResult(`Imported ${res.inserted} book${res.inserted === 1 ? "" : "s"}.`);
+      // say what was skipped as well as what landed, so a short count isn't a mystery
+      const skipped = [
+        res.duplicates ? `${res.duplicates} already catalogued` : null,
+        res.invalid ? `${res.invalid} with no title` : null,
+      ].filter(Boolean);
+      setResult(
+        `Imported ${res.inserted} book${res.inserted === 1 ? "" : "s"}.` +
+          (skipped.length ? ` Skipped ${skipped.join(" and ")}.` : "")
+      );
       setRows([]);
-      setTimeout(() => (close ? close() : router.push("/books")), 1000);
+      setTimeout(() => (close ? close() : router.push("/books")), skipped.length ? 2600 : 1000);
     }
   }
 

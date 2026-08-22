@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { generateBarcode } from "@/lib/barcode";
+import type { WriteOffReason } from "@/lib/types";
 
 export type BookFormState = { error?: string; ok?: boolean };
 
@@ -38,13 +39,29 @@ export async function createBook(
   if (!data.title) return { error: "Title is required." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("books").insert({
-    ...data,
-    available_copies: data.total_copies,
-    barcode: generateBarcode(),
-  });
 
-  if (error) return { error: error.message };
+  // available_copies is derived by the database (total minus copies on loan).
+  // Barcodes are random, so retry the long-shot collision against the unique
+  // index rather than showing the admin a constraint-violation string.
+  let error = null;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    ({ error } = await supabase.from("books").insert({
+      ...data,
+      barcode: generateBarcode(),
+    }));
+    if (!error) break;
+    // 23505 = unique violation; only the barcode column can collide here
+    if (error.code !== "23505") break;
+  }
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Couldn't allocate a unique barcode. Please try again."
+          : error.message,
+    };
+  }
 
   revalidatePath("/books");
   revalidatePath("/");
@@ -61,23 +78,9 @@ export async function updateBook(
 
   const supabase = await createClient();
 
-  // keep available_copies consistent when total changes
-  const { data: current } = await supabase
-    .from("books")
-    .select("total_copies, available_copies")
-    .eq("id", id)
-    .single();
-
-  let available = current?.available_copies ?? data.total_copies;
-  if (current) {
-    const onLoan = current.total_copies - current.available_copies;
-    available = Math.max(0, data.total_copies - onLoan);
-  }
-
-  const { error } = await supabase
-    .from("books")
-    .update({ ...data, available_copies: available })
-    .eq("id", id);
+  // available_copies is derived by the database, so changing total_copies here
+  // re-derives it from the loans actually outstanding
+  const { error } = await supabase.from("books").update(data).eq("id", id);
 
   if (error) return { error: error.message };
 
@@ -86,9 +89,41 @@ export async function updateBook(
   return { ok: true };
 }
 
-export async function deleteBook(id: string) {
+/**
+ * Retire one shelf copy that is lost or damaged beyond use. For a copy that is
+ * currently with a student, use the Lost / Damaged action on Circulation
+ * instead — that one also closes the loan and charges the borrower.
+ */
+export async function writeOffCopy(
+  bookId: string,
+  reason: WriteOffReason,
+  note: string
+): Promise<{ error?: string }> {
   const supabase = await createClient();
-  await supabase.from("books").delete().eq("id", id);
+  const { error } = await supabase.rpc("write_off_copy", {
+    p_book_id: bookId,
+    p_loan_id: null,
+    p_reason: reason,
+    p_note: note.trim() || null,
+    p_charge: 0,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath("/books");
+  revalidatePath(`/books/${bookId}`);
+  revalidatePath("/reports");
+  revalidatePath("/");
+  return {};
+}
+
+export async function deleteBook(id: string): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.from("books").delete().eq("id", id);
+
+  // the database refuses while copies are still out with students
+  if (error) return { error: error.message };
+
   revalidatePath("/books");
   revalidatePath("/");
+  return {};
 }

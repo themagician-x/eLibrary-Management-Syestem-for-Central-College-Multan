@@ -4,6 +4,7 @@ import PageShell from "@/components/PageShell";
 import SearchToolbar from "@/components/SearchToolbar";
 import StudentsTable from "./students-table";
 import { createClient } from "@/lib/supabase/server";
+import { parseSearch, orFilter } from "@/lib/search";
 import type { Student } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Students" };
@@ -16,15 +17,16 @@ export default async function StudentsPage({
   const { q = "", status = "", dept = "" } = await searchParams;
   const supabase = await createClient();
 
+  const search = parseSearch(q);
+
   let query = supabase.from("students").select("*").order("created_at", { ascending: false });
-  if (q.trim()) {
-    const t = q.trim();
-    query = query.or(`name.ilike.%${t}%,roll_no.ilike.%${t}%,email.ilike.%${t}%`);
-  }
+  const filter = orFilter(search.terms, ["name", "roll_no", "email"]);
+  if (filter) query = query.or(filter);
   if (status === "active" || status === "blocked") query = query.eq("status", status);
   if (dept) query = query.eq("class_dept", dept);
 
-  const { data, error } = await query;
+  // too many terms: show the message rather than a misleading empty result
+  const { data, error } = search.error ? { data: [], error: null } : await query;
 
   // distinct departments read from the whole roll, not the filtered page, so
   // the options don't vanish as you narrow
@@ -46,8 +48,14 @@ export default async function StudentsPage({
         </Link>
       }
     >
+      {search.error && (
+        <div role="alert" className="mb-4 rounded-xl border border-warn/25 bg-warn-soft px-4 py-3 text-sm font-medium text-warn">
+          {search.error}
+        </div>
+      )}
+
       {error && (
-        <div className="mb-6 rounded-xl border border-danger/20 bg-danger-soft px-4 py-3 text-sm text-danger">
+        <div role="alert" className="mb-4 rounded-xl border border-danger/20 bg-danger-soft px-4 py-3 text-sm text-danger">
           Couldn&rsquo;t load students: {error.message}
         </div>
       )}
@@ -56,7 +64,7 @@ export default async function StudentsPage({
       <SearchToolbar
         basePath="/students"
         q={q}
-        placeholder="Search name, roll no or email…"
+        placeholder="Search name, roll no or email — commas for up to 5…"
         filters={[
           {
             name: "status",

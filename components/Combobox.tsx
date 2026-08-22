@@ -7,6 +7,10 @@ import { useEffect, useId, useRef, useState } from "react";
  * Unlike <Select>, the typed value need not be one of the suggestions — it's a
  * combobox, so ISBN auto-fill or a brand-new category are both fine. A hidden
  * input keeps it form-submittable when `name` is given.
+ *
+ * Pass `createLabel` to advertise that: when what's typed matches no suggestion,
+ * an extra "create" row appears at the top of the list so the option is
+ * discoverable instead of a hidden trick of the input.
  */
 export default function Combobox({
   suggestions,
@@ -15,6 +19,7 @@ export default function Combobox({
   name,
   id,
   placeholder,
+  createLabel,
   className = "",
 }: {
   suggestions: string[];
@@ -23,6 +28,8 @@ export default function Combobox({
   name?: string;
   id?: string;
   placeholder?: string;
+  /** e.g. "Add" → renders `Add “Poetry” as a new category`. Omit to disable. */
+  createLabel?: string;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -31,10 +38,21 @@ export default function Combobox({
   const listRef = useRef<HTMLUListElement>(null);
   const listId = useId();
 
-  const q = value.trim().toLowerCase();
+  const typed = value.trim();
+  const q = typed.toLowerCase();
   const filtered = q
     ? suggestions.filter((s) => s.toLowerCase().includes(q))
     : suggestions;
+
+  // offer to keep what was typed when it isn't already an option
+  const canCreate =
+    Boolean(createLabel) && typed.length > 0 && !suggestions.some((s) => s.toLowerCase() === q);
+
+  // the create row, when shown, is the first option — keyboard nav walks both
+  const rows: { value: string; create?: boolean }[] = [
+    ...(canCreate ? [{ value: typed, create: true }] : []),
+    ...filtered.map((s) => ({ value: s })),
+  ];
 
   // close on outside click
   useEffect(() => {
@@ -63,14 +81,14 @@ export default function Combobox({
       case "ArrowDown":
         e.preventDefault();
         if (!open) { setOpen(true); setActive(0); }
-        else setActive((a) => Math.min(a + 1, filtered.length - 1));
+        else setActive((a) => Math.min(a + 1, rows.length - 1));
         break;
       case "ArrowUp":
         e.preventDefault();
         if (open) setActive((a) => Math.max(a - 1, 0));
         break;
       case "Enter":
-        if (open && filtered[active]) { e.preventDefault(); choose(filtered[active]); }
+        if (open && rows[active]) { e.preventDefault(); choose(rows[active].value); }
         break;
       case "Escape":
         setOpen(false);
@@ -118,16 +136,42 @@ export default function Combobox({
         </button>
       </div>
 
-      {open && filtered.length > 0 && (
+      {open && rows.length > 0 && (
         <ul
           ref={listRef}
           id={listId}
           role="listbox"
           className="absolute z-30 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-mist-deep bg-paper p-1.5 shadow-[0_16px_40px_rgba(5,31,66,0.16)]"
         >
-          {filtered.map((opt, i) => {
-            const selected = opt.toLowerCase() === q;
+          {rows.map((row, i) => {
+            const opt = row.value;
             const highlighted = active === i;
+
+            if (row.create) {
+              return (
+                <li
+                  key="__create"
+                  role="option"
+                  aria-selected={false}
+                  onMouseEnter={() => setActive(i)}
+                  onClick={() => choose(opt)}
+                  className={`mb-1 flex cursor-pointer items-center gap-2 rounded-lg border border-dashed px-3 py-2.5 text-sm transition-colors ${
+                    highlighted
+                      ? "border-gold-500 bg-navy-900 text-cream"
+                      : "border-mist-deep text-gold-700 hover:bg-mist"
+                  }`}
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 flex-none" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  <span className="truncate">
+                    {createLabel} <span className="font-semibold">&ldquo;{opt}&rdquo;</span>
+                  </span>
+                </li>
+              );
+            }
+
+            const selected = opt.toLowerCase() === q;
             return (
               <li
                 key={opt}

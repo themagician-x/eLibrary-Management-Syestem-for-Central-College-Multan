@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Book } from "@/lib/types";
 import BookForm from "../../book-form";
 import { updateBook } from "../../actions";
+import { getUsedCategories } from "@/lib/categories";
 
 export const metadata: Metadata = { title: "Edit book" };
 
@@ -16,7 +17,10 @@ export default async function EditBookPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: book } = await supabase.from("books").select("*").eq("id", id).single();
+  const [{ data: book }, categories] = await Promise.all([
+    supabase.from("books").select("*").eq("id", id).single(),
+    getUsedCategories(),
+  ]);
 
   if (!book) notFound();
 
@@ -32,7 +36,7 @@ export default async function EditBookPage({
         </Link>
       }
     >
-      <BookForm action={action} book={book as Book} submitLabel="Save changes" />
+      <BookForm action={action} book={book as Book} submitLabel="Save changes" categories={categories} />
     </PageShell>
   );
 }

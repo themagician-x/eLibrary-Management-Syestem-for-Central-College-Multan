@@ -17,7 +17,6 @@ function parse(formData: FormData) {
     class_dept: str(formData.get("class_dept")),
     email: str(formData.get("email")),
     phone: str(formData.get("phone")),
-    photo_url: str(formData.get("photo_url")),
     status: status === "blocked" ? "blocked" : "active",
   };
 }
@@ -61,9 +60,15 @@ export async function updateStudent(
   return { ok: true };
 }
 
-export async function deleteStudent(id: string) {
+export async function deleteStudent(id: string): Promise<{ error?: string }> {
   const supabase = await createClient();
-  await supabase.from("students").delete().eq("id", id);
+  const { error } = await supabase.from("students").delete().eq("id", id);
+
+  // the database refuses when the student still has books out or owes money —
+  // its message already explains which, so pass it straight through
+  if (error) return { error: error.message };
+
   revalidatePath("/students");
   revalidatePath("/");
+  return {};
 }

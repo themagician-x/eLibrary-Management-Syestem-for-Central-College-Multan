@@ -42,3 +42,10 @@ next-env.d.ts
 
 # test screenshots
 scripts/shots/
+
+# personal credential notes — never commit
+ADMIN-LOGIN.local.md
+*.local.md
+
+# generated library cards / student paperwork — contains personal data
+*.pdf

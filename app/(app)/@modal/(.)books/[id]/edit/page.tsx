@@ -4,6 +4,7 @@ import BookForm from "@/app/(app)/books/book-form";
 import { updateBook } from "@/app/(app)/books/actions";
 import type { Book } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
+import { getUsedCategories } from "@/lib/categories";
 
 export default async function InterceptedEditBook({
   params,
@@ -12,12 +13,15 @@ export default async function InterceptedEditBook({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data: book } = await supabase.from("books").select("*").eq("id", id).single();
+  const [{ data: book }, categories] = await Promise.all([
+    supabase.from("books").select("*").eq("id", id).single(),
+    getUsedCategories(),
+  ]);
   if (!book) notFound();
 
   return (
     <Modal title="Edit book" subtitle={(book as Book).title}>
-      <BookForm action={updateBook.bind(null, id)} book={book as Book} submitLabel="Save changes" />
+      <BookForm action={updateBook.bind(null, id)} book={book as Book} submitLabel="Save changes" categories={categories} />
     </Modal>
   );
 }

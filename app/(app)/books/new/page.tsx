@@ -3,10 +3,13 @@ import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import BookForm from "../book-form";
 import { createBook } from "../actions";
+import { getUsedCategories } from "@/lib/categories";
 
 export const metadata: Metadata = { title: "Add book" };
 
-export default function NewBookPage() {
+export default async function NewBookPage() {
+  const categories = await getUsedCategories();
+
   return (
     <PageShell
       title="Add a book"
@@ -17,7 +20,7 @@ export default function NewBookPage() {
         </Link>
       }
     >
-      <BookForm action={createBook} submitLabel="Add book" />
+      <BookForm action={createBook} submitLabel="Add book" categories={categories} />
     </PageShell>
   );
 }

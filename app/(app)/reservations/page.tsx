@@ -24,7 +24,7 @@ export default async function ReservationsPage({
   const statuses = history ? ["fulfilled", "cancelled"] : ["waiting", "ready"];
   const { data, error } = await supabase
     .from("reservations")
-    .select("*, book:books(id,title,author,available_copies), student:students(id,name,roll_no,photo_url)")
+    .select("*, book:books(id,title,author,available_copies), student:students(id,name,roll_no)")
     .in("status", statuses)
     .order("created_at", { ascending: true });
 

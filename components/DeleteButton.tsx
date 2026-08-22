@@ -18,7 +18,7 @@ export default function DeleteButton({
   onDeleted,
   className,
 }: {
-  onDelete: () => Promise<unknown>;
+  onDelete: () => Promise<{ error?: string } | unknown>;
   name: string;
   title?: string;
   description?: React.ReactNode;
@@ -28,6 +28,7 @@ export default function DeleteButton({
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
 
   useEffect(() => {
@@ -41,7 +42,16 @@ export default function DeleteButton({
 
   function confirm() {
     start(async () => {
-      await onDelete();
+      setError(null);
+      const res = (await onDelete()) as { error?: string } | undefined;
+
+      // the database refuses deletes that would erase an open loan or an
+      // unpaid fine — keep the dialog up and show why
+      if (res?.error) {
+        setError(res.error);
+        return;
+      }
+
       onDeleted?.();
       if (redirectTo) window.location.href = redirectTo;
       else setOpen(false);
@@ -52,7 +62,7 @@ export default function DeleteButton({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => { setError(null); setOpen(true); }}
         title={`Delete ${name}`}
         aria-label={`Delete ${name}`}
         className={className ?? "flex h-8 w-8 items-center justify-center rounded-lg text-ink-mute transition-colors hover:bg-danger-soft hover:text-danger"}
@@ -88,6 +98,12 @@ export default function DeleteButton({
                   </p>
                 </div>
               </div>
+              {error && (
+                <p role="alert" className="mt-4 rounded-lg border border-danger/20 bg-danger-soft px-3.5 py-2.5 text-sm font-medium text-danger">
+                  {error}
+                </p>
+              )}
+
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   type="button"
@@ -103,7 +119,7 @@ export default function DeleteButton({
                   onClick={confirm}
                   className="rounded-xl bg-danger px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-danger/90 disabled:opacity-60"
                 >
-                  {pending ? "Deleting…" : confirmLabel}
+                  {pending ? "Deleting…" : error ? "Try again" : confirmLabel}
                 </button>
               </div>
             </div>

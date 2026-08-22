@@ -2,10 +2,12 @@
 // Run (dev server on :3000):  node scripts/login-e2e.mjs
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
+import { adminCredentials } from "../lib/admin-credentials.mjs";
 
 const BASE = "http://localhost:3000";
-const EMAIL = process.argv[2] || "admin@central.edu.pk";
-const PASSWORD = process.argv[3] || "***REMOVED-ROTATED-CREDENTIAL***";
+const ADMIN = adminCredentials();
+const EMAIL = process.argv[2] || ADMIN.email;
+const PASSWORD = process.argv[3] || ADMIN.password;
 
 mkdirSync("scripts/shots", { recursive: true });
 const browser = await chromium.launch();

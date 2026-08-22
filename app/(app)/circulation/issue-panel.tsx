@@ -3,6 +3,7 @@
 import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { studentLookup, bookLookup } from "@/lib/search";
 import AsyncPicker, { type PickOption } from "@/components/AsyncPicker";
 import { issueBook } from "./actions";
 
@@ -19,7 +20,7 @@ export default function IssuePanel({ loanDays, maxBooks }: { loanDays: number; m
     const { data } = await supabase
       .from("books")
       .select("id,title,author,barcode,available_copies")
-      .or(`title.ilike.%${term}%,barcode.eq.${term},isbn.eq.${term}`)
+      .or(bookLookup(term))
       .order("title")
       .limit(8);
     return (data ?? []).map((b) => ({
@@ -35,7 +36,7 @@ export default function IssuePanel({ loanDays, maxBooks }: { loanDays: number; m
     const { data } = await supabase
       .from("students")
       .select("id,name,roll_no,class_dept,status")
-      .or(`name.ilike.%${term}%,roll_no.ilike.%${term}%`)
+      .or(studentLookup(term))
       .order("name")
       .limit(8);
     return (data ?? []).map((s) => ({

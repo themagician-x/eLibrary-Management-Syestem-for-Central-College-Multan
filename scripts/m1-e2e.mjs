@@ -3,10 +3,13 @@
 import { chromium } from "playwright";
 import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { adminCredentials } from "../lib/admin-credentials.mjs";
+
+const ADMIN = adminCredentials();
 
 const BASE = "http://localhost:3000";
-const EMAIL = "admin@central.edu.pk";
-const PASSWORD = "***REMOVED-ROTATED-CREDENTIAL***";
+const EMAIL = ADMIN.email;
+const PASSWORD = ADMIN.password;
 
 mkdirSync("scripts/shots", { recursive: true });
 const browser = await chromium.launch();

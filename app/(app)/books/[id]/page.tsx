@@ -3,9 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageShell from "@/components/PageShell";
 import { createClient } from "@/lib/supabase/server";
-import type { Book } from "@/lib/types";
+import type { Book, WriteOffWithRefs } from "@/lib/types";
 import DeleteButton from "@/components/DeleteButton";
 import BookLabel from "@/components/BookLabel";
+import BookFacts from "@/components/BookFacts";
+import { money } from "@/lib/config";
+import WriteOffButton from "../write-off-button";
 import { deleteBook } from "../actions";
 
 export const metadata: Metadata = { title: "Book" };
@@ -21,21 +24,20 @@ export default async function BookDetailPage({
   if (!data) notFound();
   const book = data as Book;
 
-  const { count: reservedCount } = await supabase
-    .from("reservations")
-    .select("*", { count: "exact", head: true })
-    .eq("book_id", id)
-    .in("status", ["waiting", "ready"]);
+  const [{ count: reservedCount }, { data: writeOffRows }] = await Promise.all([
+    supabase
+      .from("reservations")
+      .select("*", { count: "exact", head: true })
+      .eq("book_id", id)
+      .in("status", ["waiting", "ready"]),
+    supabase
+      .from("write_offs")
+      .select("*, student:students(id,name,roll_no)")
+      .eq("book_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  const meta: [string, string | number | null][] = [
-    ["Author", book.author],
-    ["ISBN", book.isbn],
-    ["Publisher", book.publisher],
-    ["Year", book.published_year],
-    ["Category", book.category],
-    ["Language", book.language],
-    ["Shelf", book.shelf],
-  ];
+  const writeOffs = (writeOffRows ?? []) as unknown as WriteOffWithRefs[];
 
   return (
     <PageShell
@@ -44,6 +46,7 @@ export default async function BookDetailPage({
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/books" className="rounded-xl px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">← Books</Link>
+          <WriteOffButton bookId={book.id} bookTitle={book.title} disabled={book.available_copies < 1} />
           <Link href={`/books/${book.id}/edit`} className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">Edit</Link>
           <DeleteButton onDelete={deleteBook.bind(null, book.id)} name={`“${book.title}”`} title="Delete book" redirectTo="/books" />
         </div>
@@ -73,19 +76,38 @@ export default async function BookDetailPage({
                 {reservedCount} in queue
               </Link>
             ) : null}
+            {writeOffs.length > 0 && (
+              <span className="inline-block rounded-full bg-warn-soft px-3 py-1 text-xs font-bold text-warn">
+                {writeOffs.length} written off
+              </span>
+            )}
           </div>
-          <dl className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-            {meta.map(([k, val]) => (
-              <div key={k} className="border-b border-mist pb-3">
-                <dt className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">{k}</dt>
-                <dd className="mt-1 text-sm font-semibold text-navy-900">{val || <span className="font-normal text-ink-mute/60">—</span>}</dd>
-              </div>
-            ))}
-          </dl>
-          {book.description && (
+          <BookFacts book={book} className="mt-5" />
+
+          {writeOffs.length > 0 && (
             <div className="mt-6">
-              <p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Description</p>
-              <p className="mt-2 max-w-prose text-sm leading-relaxed text-ink-soft">{book.description}</p>
+              <p className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Lost &amp; damaged</p>
+              <ul className="mt-2 divide-y divide-mist rounded-xl border border-mist">
+                {writeOffs.map((w) => (
+                  <li key={w.id} className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5">
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-2">
+                        <span className={`rounded-full px-2 py-0.5 text-[0.62rem] font-bold capitalize ${w.reason === "lost" ? "bg-danger-soft text-danger" : "bg-warn-soft text-warn"}`}>
+                          {w.reason}
+                        </span>
+                        <span className="text-sm text-ink-soft">
+                          {w.student?.name ?? "Shelf copy"}
+                        </span>
+                      </span>
+                      {w.note && <span className="mt-0.5 block truncate text-xs text-ink-mute">{w.note}</span>}
+                    </span>
+                    <span className="flex flex-none items-center gap-3 text-xs text-ink-mute">
+                      {Number(w.charge) > 0 && <span className="font-semibold text-navy-900">{money(Number(w.charge))}</span>}
+                      {new Date(w.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

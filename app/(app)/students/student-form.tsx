@@ -2,7 +2,6 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import Select from "@/components/Select";
 import { useModal, useBeforeUnload } from "@/components/unsaved";
 import type { Student } from "@/lib/types";
@@ -30,10 +29,7 @@ export default function StudentForm({
   const router = useRouter();
   const [state, formAction, pending] = useActionState(action, {} as StudentFormState);
 
-  const [photoUrl, setPhotoUrl] = useState<string | null>(student?.photo_url ?? null);
   const [name, setName] = useState(student?.name ?? "");
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const { setDirty: setDirtyCtx, close } = useModal();
   const [dirty, setDirty] = useState(false);
@@ -58,55 +54,19 @@ export default function StudentForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.ok]);
 
-  async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadError(null);
-    setUploading(true);
-    markDirty();
-    try {
-      const supabase = createClient();
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from("student-photos").upload(path, file, { upsert: false });
-      if (error) throw error;
-      const { data } = supabase.storage.from("student-photos").getPublicUrl(path);
-      setPhotoUrl(data.publicUrl);
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : "Upload failed.");
-    } finally {
-      setUploading(false);
-    }
-  }
-
   const v = (k: keyof Student) => (student?.[k] ?? "") as string;
 
   return (
     <form action={formAction} onInput={markDirty} onSubmit={clearDirty} className="grid gap-8 lg:grid-cols-[200px_1fr]">
-      {/* photo column */}
+      {/* identity */}
       <div>
-        <span className={label}>Photo</span>
-        <input type="hidden" name="photo_url" value={photoUrl ?? ""} />
-        <div className="mx-auto flex aspect-square w-40 items-center justify-center overflow-hidden rounded-full border border-mist-deep bg-navy-900 lg:mx-0">
-          {photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photoUrl} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <span className="font-display text-4xl font-semibold text-gold-400">{initials(name)}</span>
-          )}
+        <span className={label}>Student</span>
+        <div className="mx-auto flex aspect-square w-40 items-center justify-center rounded-full border border-mist-deep bg-navy-900 lg:mx-0">
+          <span className="font-display text-4xl font-semibold text-gold-400">{initials(name)}</span>
         </div>
-        <label className="mt-3 block">
-          <span className="flex cursor-pointer items-center justify-center rounded-xl border border-navy-900 px-4 py-2 text-xs font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream">
-            {uploading ? "Uploading…" : photoUrl ? "Change photo" : "Upload photo"}
-          </span>
-          <input type="file" accept="image/*" onChange={onPhotoChange} disabled={uploading} className="hidden" />
-        </label>
-        {photoUrl && (
-          <button type="button" onClick={() => setPhotoUrl(null)} className="mt-2 w-full text-center text-xs text-ink-mute hover:text-danger">
-            Remove photo
-          </button>
-        )}
-        {uploadError && <p className="mt-2 text-xs text-danger">{uploadError}</p>}
+        <p className="mt-3 text-center text-xs text-ink-mute lg:text-left">
+          Records are identified by name and roll number.
+        </p>
       </div>
 
       {/* fields column */}
@@ -156,7 +116,7 @@ export default function StudentForm({
       </div>
 
       <div className="flex items-center justify-end gap-3 lg:col-span-2">
-        <button type="submit" disabled={pending || uploading} className="rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-cream transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-60">
+        <button type="submit" disabled={pending} className="rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-cream transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-60">
           {pending ? "Saving…" : submitLabel}
         </button>
         <button type="button" onClick={() => (close ? close() : router.push("/students"))} className="rounded-xl px-5 py-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">

@@ -61,7 +61,7 @@ export default function SearchToolbar({
   const active = Boolean(text.trim() || Object.values(values).some(Boolean));
 
   return (
-    <div className="mb-6 flex shrink-0 flex-wrap items-center gap-3">
+    <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
       <div className="relative min-w-[15rem] flex-1">
         <svg viewBox="0 0 24 24" className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-mute" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
         <input

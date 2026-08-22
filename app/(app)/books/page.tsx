@@ -3,6 +3,7 @@ import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import SearchToolbar from "@/components/SearchToolbar";
 import { createClient } from "@/lib/supabase/server";
+import { parseSearch, orFilter } from "@/lib/search";
 import type { Book } from "@/lib/types";
 import BooksTable from "./books-table";
 
@@ -16,17 +17,20 @@ export default async function BooksPage({
   const { q = "", category = "", shelf = "", availability = "" } = await searchParams;
   const supabase = await createClient();
 
+  const search = parseSearch(q);
+
   let query = supabase.from("books").select("*").order("created_at", { ascending: false });
-  if (q.trim()) {
-    const term = q.trim();
-    query = query.or(`title.ilike.%${term}%,author.ilike.%${term}%,isbn.ilike.%${term}%`);
-  }
+  const filter = orFilter(search.terms, ["title", "author", "isbn"]);
+  if (filter) query = query.or(filter);
   if (category) query = query.eq("category", category);
   if (shelf) query = query.eq("shelf", shelf);
   if (availability === "available") query = query.gt("available_copies", 0);
   else if (availability === "out") query = query.eq("available_copies", 0);
 
-  const { data: books, error } = await query;
+  // too many terms: show the message rather than a misleading empty result
+  const { data: books, error } = search.error
+    ? { data: [], error: null }
+    : await query;
 
   // distinct categories and shelves for the filters — read from the whole
   // catalogue, not the filtered page, so the options don't vanish as you narrow
@@ -56,9 +60,15 @@ export default async function BooksPage({
         </div>
       }
     >
+      {search.error && (
+        <div role="alert" className="mb-4 rounded-xl border border-warn/25 bg-warn-soft px-4 py-3 text-sm font-medium text-warn">
+          {search.error}
+        </div>
+      )}
+
       {error && (
-        <div className="mb-6 rounded-xl border border-danger/20 bg-danger-soft px-4 py-3 text-sm text-danger">
-          Couldn&rsquo;t load books: {error.message}. Have you run the M1 migration yet?
+        <div role="alert" className="mb-4 rounded-xl border border-danger/20 bg-danger-soft px-4 py-3 text-sm text-danger">
+          Couldn&rsquo;t load books: {error.message}
         </div>
       )}
 
@@ -66,7 +76,7 @@ export default async function BooksPage({
       <SearchToolbar
         basePath="/books"
         q={q}
-        placeholder="Search title, author or ISBN…"
+        placeholder="Search title, author or ISBN — commas for up to 5…"
         filters={[
           {
             name: "category",

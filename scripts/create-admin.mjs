@@ -2,12 +2,15 @@
 // Uses the GoTrue REST API directly (no supabase-js → no WebSocket needed).
 // Run:  node --env-file=.env.local scripts/create-admin.mjs [email] [password]
 
+import { adminCredentials } from "../lib/admin-credentials.mjs";
+
 const URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const SECRET = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const email = process.argv[2] || "admin@central.edu.pk";
-const password = process.argv[3] || "***REMOVED-ROTATED-CREDENTIAL***";
+const ADMIN = adminCredentials();
+const email = process.argv[2] || ADMIN.email;
+const password = process.argv[3] || ADMIN.password;
 
 if (!URL || !ANON || !SECRET) {
   console.error("❌ Missing env vars. Did you fill in .env.local?");
