@@ -12,7 +12,7 @@ Built with **Next.js 16** (App Router), **Tailwind CSS v4**, and **Supabase**
 - **Single admin** login (no student accounts, no roles)
 - **Students** are records the admin manages, not logins
 - **Physical books** only (no e-books)
-- 14-day loan period with automatic fine calculation
+- Configurable loan period with automatic fine calculation
 
 ## Roadmap
 
@@ -20,17 +20,19 @@ Built with **Next.js 16** (App Router), **Tailwind CSS v4**, and **Supabase**
 |-----------|-------|
 | **M0** | Foundation — Supabase wiring, admin login, app shell ✅ |
 | **M1** | Catalogue — books CRUD, covers, QR/barcode, CSV import ✅ |
-| **M2** | Students — profiles with photo & history ✅ |
+| **M2** | Students — profiles, borrowing history, printable library card ✅ |
 | **M3** | Circulation — issue / return / renew, overdue ✅ |
 | **M4** | Fines — auto late fees, pay / waive ✅ |
 | **M5** | Reservations — hold queue + auto-ready on return ✅ |
-| **M7** | Dashboard, reports (CSV/PDF) & settings ✅ |
+| **M7** | Dashboard, reports & settings ✅ |
 
-### Planned
+Since M7: lost/damaged write-offs with inventory tracking, per-action
+confirmations, fine breakdowns showing how each amount was reached, a full
+student record drawer, pagination, and a hardening pass (see **Security notes**).
 
-- **In-app Notifications feed** — record the messages the library would send
-  (issued / due-soon / overdue / fine / hold-ready) and show them in an in-app
-  feed. No external email dependency. _(Replaces the earlier email + cron idea.)_
+There is **no notifications or email feature, and none is planned** — the
+library works from the screen, and a book's status is read there rather than
+pushed anywhere.
 
 ## Getting started
 
