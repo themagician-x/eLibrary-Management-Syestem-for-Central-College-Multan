@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
 import { cancelReservation, issueReserved } from "./actions";
 
 export default function ReservationActions({
@@ -9,22 +10,31 @@ export default function ReservationActions({
   bookId,
   studentId,
   ready,
+  bookTitle,
+  student,
 }: {
   id: string;
   bookId: string;
   studentId: string;
   ready: boolean;
+  bookTitle: string;
+  student: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [pending, start] = useTransition();
-  const [err, setErr] = useState<string | null>(null);
 
-  const run = (fn: () => Promise<{ error?: string }>) =>
+  const run = (
+    fn: () => Promise<{ error?: string }>,
+    failure: string,
+    title: string,
+    detail: string
+  ) =>
     start(async () => {
-      setErr(null);
       const res = await fn();
-      if (res.error) setErr(res.error);
-      else router.refresh();
+      if (res.error) return toast.error(failure, res.error);
+      toast.success(title, detail);
+      router.refresh();
     });
 
   return (
@@ -34,7 +44,14 @@ export default function ReservationActions({
           <button
             type="button"
             disabled={pending}
-            onClick={() => run(() => issueReserved(bookId, studentId))}
+            onClick={() =>
+              run(
+                () => issueReserved(bookId, studentId),
+                "Couldn't issue the book",
+                "Book issued",
+                `${bookTitle} is now on loan to ${student}.`
+              )
+            }
             className="rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-bold text-cream transition-colors hover:bg-navy-800 disabled:opacity-50"
           >
             Issue
@@ -43,13 +60,19 @@ export default function ReservationActions({
         <button
           type="button"
           disabled={pending}
-          onClick={() => run(() => cancelReservation(id))}
+          onClick={() =>
+            run(
+              () => cancelReservation(id),
+              "Couldn't cancel the hold",
+              "Hold cancelled",
+              `${student}'s hold on ${bookTitle} has been removed.`
+            )
+          }
           className="rounded-lg border border-mist-deep px-2.5 py-1.5 text-xs font-bold text-ink-soft transition-colors hover:bg-mist disabled:opacity-50"
         >
           Cancel
         </button>
       </div>
-      {err && <span className="text-[0.7rem] text-danger">{err}</span>}
     </div>
   );
 }

@@ -140,7 +140,14 @@ export default async function ReservationsPage({
                 <span className="text-sm text-ink-soft">{fmt(r.created_at)}</span>
                 <div className="lg:justify-self-end">
                   {!history && (
-                    <ReservationActions id={r.id} bookId={r.book_id} studentId={r.student_id} ready={r.status === "ready"} />
+                    <ReservationActions
+                      id={r.id}
+                      bookId={r.book_id}
+                      studentId={r.student_id}
+                      ready={r.status === "ready"}
+                      bookTitle={r.book?.title ?? "the book"}
+                      student={r.student?.name ?? "the student"}
+                    />
                   )}
                 </div>
               </div>

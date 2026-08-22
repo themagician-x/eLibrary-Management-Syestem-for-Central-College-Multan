@@ -137,7 +137,7 @@ export default function BookDrawer({
           >
             Edit book
           </Link>
-          <DeleteButton onDelete={() => deleteBook(b.id)} name={`“${b.title}”`} title="Delete book" onDeleted={onClose} />
+          <DeleteButton onDelete={() => deleteBook(b.id)} name={`“${b.title}”`} title="Delete book" successTitle="Book deleted" onDeleted={onClose} />
         </div>
       </div>
     </div>

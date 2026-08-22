@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Combobox from "@/components/Combobox";
 import { useModal, useFormDirty } from "@/components/unsaved";
+import { useToast } from "@/components/Toast";
 import type { Book, BookInput } from "@/lib/types";
 import type { BookFormState } from "./actions";
 
@@ -35,6 +36,7 @@ export default function BookForm({
   categories?: string[];
 }) {
   const router = useRouter();
+  const toast = useToast();
 
   // curated defaults first, then anything the library has actually used
   const categoryOptions = [...new Set([...CATEGORIES, ...categories])].sort((a, b) =>
@@ -60,6 +62,10 @@ export default function BookForm({
   useEffect(() => {
     if (state.ok) {
       setDirtyCtx(false);
+      toast.success(
+        book ? "Book updated" : "Book added",
+        `${state.title ?? "The book"} has been saved to the catalogue.`
+      );
       if (close) close();
       else router.push("/books");
     }

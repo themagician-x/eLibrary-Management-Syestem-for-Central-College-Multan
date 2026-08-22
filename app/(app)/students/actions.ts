@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 
-export type StudentFormState = { error?: string; ok?: boolean };
+export type StudentFormState = { error?: string; ok?: boolean; name?: string };
 
 function parse(formData: FormData) {
   const str = (v: FormDataEntryValue | null) => {
@@ -37,7 +37,7 @@ export async function createStudent(
 
   revalidatePath("/students");
   revalidatePath("/");
-  return { ok: true };
+  return { ok: true, name: data.name };
 }
 
 export async function updateStudent(
@@ -57,7 +57,7 @@ export async function updateStudent(
 
   revalidatePath("/students");
   revalidatePath(`/students/${id}`);
-  return { ok: true };
+  return { ok: true, name: data.name };
 }
 
 export async function deleteStudent(id: string): Promise<{ error?: string }> {

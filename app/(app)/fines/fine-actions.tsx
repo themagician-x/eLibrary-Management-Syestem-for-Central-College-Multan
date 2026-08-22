@@ -3,21 +3,39 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { FineStatus } from "@/lib/types";
+import { money } from "@/lib/config";
+import { useToast } from "@/components/Toast";
 import { setFineStatus } from "./actions";
 
 export default function FineActions({
   id,
   status,
+  amount,
+  student,
 }: {
   id: string;
   status: FineStatus;
+  amount: number;
+  student: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [pending, start] = useTransition();
+
+  const WORDING: Record<string, { title: string; detail: string }> = {
+    paid: { title: "Payment recorded", detail: `${money(amount)} collected from ${student}.` },
+    waived: { title: "Fine waived", detail: `${student} no longer owes ${money(amount)}.` },
+    unpaid: { title: "Charge reopened", detail: `${money(amount)} is outstanding on ${student}'s account again.` },
+  };
 
   const set = (s: "paid" | "waived" | "unpaid") =>
     start(async () => {
-      await setFineStatus(id, s);
+      // this used to swallow failures silently
+      const res = await setFineStatus(id, s);
+      if (res?.error) return toast.error("Couldn't update the charge", res.error);
+
+      const w = WORDING[s];
+      toast.success(w.title, w.detail);
       router.refresh();
     });
 

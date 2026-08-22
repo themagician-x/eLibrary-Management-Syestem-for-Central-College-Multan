@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { money } from "@/lib/config";
 import WriteOffDialog from "@/components/WriteOffDialog";
 import type { WriteOffReason } from "@/lib/types";
-import { returnLoan, renewLoan, writeOffLoan, type ActionResult } from "./actions";
+import { useToast } from "@/components/Toast";
+import { returnLoan, renewLoan, writeOffLoan } from "./actions";
 
 export default function LoanActions({
   loanId,
@@ -21,29 +22,45 @@ export default function LoanActions({
   canRenew: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [pending, start] = useTransition();
-  const [err, setErr] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [writeOff, setWriteOff] = useState(false);
 
-  const run = (fn: (id: string) => Promise<ActionResult>) =>
+  const returnBook = () =>
     start(async () => {
-      setErr(null);
-      setInfo(null);
-      const res = await fn(loanId);
-      if (res.error) {
-        setErr(res.error);
-      } else if (res.fine && res.fine > 0) {
-        setInfo(`${money(res.fine)} late fee charged`);
-        setTimeout(() => router.refresh(), 1700);
+      const res = await returnLoan(loanId);
+      if (res.error) return toast.error("Couldn't return the book", res.error);
+
+      if (res.fine && res.fine > 0) {
+        toast.success(
+          `Returned — ${money(res.fine)} late fee charged`,
+          `${bookTitle} is back on the shelf. The fee is on ${borrower}'s account.`
+        );
       } else {
-        router.refresh();
+        toast.success("Book returned", `${bookTitle} is back on the shelf.`);
       }
+      router.refresh();
+    });
+
+  const renew = () =>
+    start(async () => {
+      const res = await renewLoan(loanId);
+      if (res.error) return toast.error("Couldn't renew the loan", res.error);
+      toast.success("Loan renewed", `${borrower} has ${bookTitle} for another loan period.`);
+      router.refresh();
     });
 
   async function confirmWriteOff(reason: WriteOffReason, note: string, charge: number) {
     const res = await writeOffLoan(bookId, loanId, reason, note, charge);
-    if (!res.error) router.refresh();
+    if (res.error) return res;
+
+    toast.success(
+      reason === "lost" ? "Copy written off as lost" : "Copy written off as damaged",
+      charge > 0
+        ? `${bookTitle} left the inventory. ${money(charge)} charged to ${borrower}.`
+        : `${bookTitle} left the inventory and ${borrower}'s loan is closed.`
+    );
+    router.refresh();
     return res;
   }
 
@@ -51,7 +68,7 @@ export default function LoanActions({
     <div className="flex flex-col items-end gap-1">
       <div className="flex items-center gap-1.5">
         {canRenew && (
-          <button type="button" disabled={pending} onClick={() => run(renewLoan)} className="rounded-lg border border-navy-900 px-2.5 py-1.5 text-xs font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream disabled:opacity-50">
+          <button type="button" disabled={pending} onClick={renew} className="rounded-lg border border-navy-900 px-2.5 py-1.5 text-xs font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream disabled:opacity-50">
             Renew
           </button>
         )}
@@ -64,12 +81,10 @@ export default function LoanActions({
         >
           Lost / Damaged
         </button>
-        <button type="button" disabled={pending} onClick={() => run(returnLoan)} className="rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-bold text-cream transition-colors hover:bg-navy-800 disabled:opacity-50">
+        <button type="button" disabled={pending} onClick={returnBook} className="rounded-lg bg-navy-900 px-3 py-1.5 text-xs font-bold text-cream transition-colors hover:bg-navy-800 disabled:opacity-50">
           {pending ? "…" : "Return"}
         </button>
       </div>
-      {err && <span className="text-[0.7rem] text-danger">{err}</span>}
-      {info && <span className="text-[0.7rem] font-semibold text-warn">{info}</span>}
 
       <WriteOffDialog
         open={writeOff}

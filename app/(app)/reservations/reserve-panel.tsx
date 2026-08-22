@@ -4,16 +4,17 @@ import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { studentLookup, bookLookup } from "@/lib/search";
+import { useToast } from "@/components/Toast";
 import AsyncPicker, { type PickOption } from "@/components/AsyncPicker";
 import { reserveBook } from "./actions";
 
 export default function ReservePanel() {
   const router = useRouter();
+  const toast = useToast();
   const [book, setBook] = useState<PickOption | null>(null);
   const [student, setStudent] = useState<PickOption | null>(null);
   const [pending, setPending] = useState(false);
   const [, startRefresh] = useTransition();
-  const [msg, setMsg] = useState<{ ok?: string; err?: string } | null>(null);
 
   const searchBooks = useCallback(async (term: string): Promise<PickOption[]> => {
     const supabase = createClient();
@@ -48,19 +49,21 @@ export default function ReservePanel() {
 
   async function submit() {
     if (!book || !student) return;
-    setMsg(null);
     setPending(true);
     const res = await reserveBook(book.id, student.id);
     setPending(false);
     if (res.error) {
-      setMsg({ err: res.error });
+      toast.error("Couldn't place the hold", res.error);
       return;
     }
-    setMsg({
-      ok: res.ready
-        ? `“${book.label}” is ready for pickup by ${student.label}.`
-        : `${student.label} reserved “${book.label}”${res.position ? ` — #${res.position} in queue` : ""}.`,
-    });
+    if (res.ready) {
+      toast.success("Ready for pickup", `A copy of ${book.label} is waiting for ${student.label}.`);
+    } else {
+      toast.success(
+        "Hold placed",
+        `${student.label} is${res.position ? ` #${res.position}` : ""} in the queue for ${book.label}.`
+      );
+    }
     setBook(null);
     setStudent(null);
     startRefresh(() => router.refresh());
@@ -78,8 +81,6 @@ export default function ReservePanel() {
           <AsyncPicker placeholder="Search name or roll no…" search={searchStudents} selected={student} onPick={setStudent} onClear={() => setStudent(null)} />
         </div>
       </div>
-      {msg?.err && <p className="mt-4 rounded-lg border border-danger/20 bg-danger-soft px-3.5 py-2.5 text-sm font-medium text-danger">{msg.err}</p>}
-      {msg?.ok && <p className="mt-4 rounded-lg border border-ok/20 bg-ok-soft px-3.5 py-2.5 text-sm font-medium text-ok">{msg.ok}</p>}
       <button type="button" onClick={submit} disabled={!book || !student || pending} className="mt-5 w-full rounded-xl bg-navy-900 px-6 py-3 text-sm font-bold text-cream transition-colors hover:bg-navy-800 disabled:cursor-not-allowed disabled:opacity-50">
         {pending ? "Placing hold…" : "Place hold"}
       </button>

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Sidebar from "@/components/Sidebar";
+import { ToastProvider } from "@/components/Toast";
 
 export default async function AppLayout({
   children,
@@ -18,10 +19,12 @@ export default async function AppLayout({
   if (!user) redirect("/login");
 
   return (
-    <div className="flex min-h-dvh flex-col lg:flex-row">
-      <Sidebar email={user.email ?? "admin"} />
-      <main className="min-w-0 flex-1">{children}</main>
-      {modal}
-    </div>
+    <ToastProvider>
+      <div className="flex min-h-dvh flex-col lg:flex-row">
+        <Sidebar email={user.email ?? "admin"} />
+        <main className="min-w-0 flex-1">{children}</main>
+        {modal}
+      </div>
+    </ToastProvider>
   );
 }

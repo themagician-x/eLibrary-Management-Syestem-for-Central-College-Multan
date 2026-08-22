@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { generateBarcode } from "@/lib/barcode";
 import type { WriteOffReason } from "@/lib/types";
 
-export type BookFormState = { error?: string; ok?: boolean };
+export type BookFormState = { error?: string; ok?: boolean; title?: string };
 
 function parse(formData: FormData) {
   const num = (v: FormDataEntryValue | null) => {
@@ -65,7 +65,7 @@ export async function createBook(
 
   revalidatePath("/books");
   revalidatePath("/");
-  return { ok: true };
+  return { ok: true, title: data.title };
 }
 
 export async function updateBook(
@@ -86,7 +86,7 @@ export async function updateBook(
 
   revalidatePath("/books");
   revalidatePath(`/books/${id}`);
-  return { ok: true };
+  return { ok: true, title: data.title };
 }
 
 /**

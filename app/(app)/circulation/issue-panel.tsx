@@ -4,16 +4,17 @@ import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { studentLookup, bookLookup } from "@/lib/search";
+import { useToast } from "@/components/Toast";
 import AsyncPicker, { type PickOption } from "@/components/AsyncPicker";
 import { issueBook } from "./actions";
 
 export default function IssuePanel({ loanDays, maxBooks }: { loanDays: number; maxBooks: number }) {
   const router = useRouter();
+  const toast = useToast();
   const [book, setBook] = useState<PickOption | null>(null);
   const [student, setStudent] = useState<PickOption | null>(null);
   const [pending, setPending] = useState(false);
   const [, startRefresh] = useTransition();
-  const [msg, setMsg] = useState<{ ok?: string; err?: string } | null>(null);
 
   const searchBooks = useCallback(async (term: string): Promise<PickOption[]> => {
     const supabase = createClient();
@@ -49,15 +50,14 @@ export default function IssuePanel({ loanDays, maxBooks }: { loanDays: number; m
 
   async function submit() {
     if (!book || !student) return;
-    setMsg(null);
     setPending(true);
     const res = await issueBook(book.id, student.id);
     setPending(false);
     if (res.error) {
-      setMsg({ err: res.error });
+      toast.error("Couldn't issue the book", res.error);
       return;
     }
-    setMsg({ ok: `“${book.label}” issued to ${student.label}.` });
+    toast.success("Book issued", `${book.label} is now on loan to ${student.label}.`);
     setBook(null);
     setStudent(null);
     startRefresh(() => router.refresh());
@@ -75,8 +75,6 @@ export default function IssuePanel({ loanDays, maxBooks }: { loanDays: number; m
           <AsyncPicker placeholder="Search name or roll no…" search={searchStudents} selected={student} onPick={setStudent} onClear={() => setStudent(null)} />
         </div>
       </div>
-      {msg?.err && <p className="mt-4 rounded-lg border border-danger/20 bg-danger-soft px-3.5 py-2.5 text-sm font-medium text-danger">{msg.err}</p>}
-      {msg?.ok && <p className="mt-4 rounded-lg border border-ok/20 bg-ok-soft px-3.5 py-2.5 text-sm font-medium text-ok">{msg.ok}</p>}
       <button
         type="button"
         onClick={submit}

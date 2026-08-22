@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import { useToast } from "@/components/Toast";
 
 /**
  * Trash-icon button that asks for confirmation before running a destructive
@@ -19,6 +21,7 @@ export default function DeleteButton({
   redirectTo,
   onDeleted,
   className,
+  successTitle = "Deleted",
 }: {
   onDelete: () => Promise<{ error?: string } | unknown>;
   name: string;
@@ -28,7 +31,11 @@ export default function DeleteButton({
   redirectTo?: string;
   onDeleted?: () => void;
   className?: string;
+  /** Toast heading on success, e.g. "Book deleted". */
+  successTitle?: string;
 }) {
+  const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -45,9 +52,16 @@ export default function DeleteButton({
         return;
       }
 
+      toast.success(successTitle, `${name} has been removed.`);
       onDeleted?.();
-      if (redirectTo) window.location.href = redirectTo;
-      else setOpen(false);
+      setOpen(false);
+
+      // soft navigation, so the confirmation survives the move — a full page
+      // load would throw the toast away before it could be read
+      if (redirectTo) {
+        router.push(redirectTo);
+        router.refresh();
+      }
     });
   }
 

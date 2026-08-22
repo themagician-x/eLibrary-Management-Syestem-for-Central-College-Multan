@@ -136,7 +136,12 @@ export default async function FinesPage({
                 {f.status !== "unpaid" && (
                   <span className={`rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold capitalize ${statusStyle[f.status]} lg:hidden`}>{f.status}</span>
                 )}
-                <FineActions id={f.id} status={f.status} />
+                <FineActions
+                  id={f.id}
+                  status={f.status}
+                  amount={Number(f.amount)}
+                  student={f.student?.name ?? "the student"}
+                />
               </div>
             </div>
           ))}

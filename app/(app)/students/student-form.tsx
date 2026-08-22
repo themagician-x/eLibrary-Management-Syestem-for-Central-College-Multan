@@ -4,6 +4,7 @@ import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Select from "@/components/Select";
 import { useModal, useFormDirty } from "@/components/unsaved";
+import { useToast } from "@/components/Toast";
 import type { Student } from "@/lib/types";
 import type { StudentFormState } from "./actions";
 
@@ -27,6 +28,7 @@ export default function StudentForm({
   submitLabel: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [state, formAction, pending] = useActionState(action, {} as StudentFormState);
 
   const [name, setName] = useState(student?.name ?? "");
@@ -39,6 +41,10 @@ export default function StudentForm({
   useEffect(() => {
     if (state.ok) {
       setDirtyCtx(false);
+      toast.success(
+        student ? "Student updated" : "Student registered",
+        `${state.name ?? "The record"} has been saved.`
+      );
       if (close) close();
       else router.push("/students");
     }

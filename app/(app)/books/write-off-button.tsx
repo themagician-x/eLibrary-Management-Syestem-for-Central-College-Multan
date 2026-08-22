@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import WriteOffDialog from "@/components/WriteOffDialog";
+import { useToast } from "@/components/Toast";
 import type { WriteOffReason } from "@/lib/types";
 import { writeOffCopy } from "./actions";
 
@@ -21,11 +22,18 @@ export default function WriteOffButton({
   disabled?: boolean;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
 
   async function confirm(reason: WriteOffReason, note: string) {
     const res = await writeOffCopy(bookId, reason, note);
-    if (!res.error) router.refresh();
+    if (res.error) return res;
+
+    toast.success(
+      reason === "lost" ? "Copy written off as lost" : "Copy written off as damaged",
+      `One copy of ${bookTitle} has left the inventory.`
+    );
+    router.refresh();
     return res;
   }
 

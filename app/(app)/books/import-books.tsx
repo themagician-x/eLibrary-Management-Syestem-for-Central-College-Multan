@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Papa from "papaparse";
 import { useModal, useBeforeUnload } from "@/components/unsaved";
+import { useToast } from "@/components/Toast";
 import { importBooks, type ImportRow } from "./import/actions";
 
 const HEADER_MAP: Record<string, keyof ImportRow> = {
@@ -33,6 +34,7 @@ function toRow(raw: Record<string, string>): ImportRow {
 
 export default function ImportBooks() {
   const router = useRouter();
+  const toast = useToast();
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [fileName, setFileName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -71,6 +73,7 @@ export default function ImportBooks() {
     setBusy(false);
     if (res.error) {
       setError(res.error);
+      toast.error("Import failed", res.error);
     } else {
       // say what was skipped as well as what landed, so a short count isn't a mystery
       const skipped = [
@@ -80,6 +83,10 @@ export default function ImportBooks() {
       setResult(
         `Imported ${res.inserted} book${res.inserted === 1 ? "" : "s"}.` +
           (skipped.length ? ` Skipped ${skipped.join(" and ")}.` : "")
+      );
+      toast.success(
+        `Imported ${res.inserted} book${res.inserted === 1 ? "" : "s"}`,
+        skipped.length ? `Skipped ${skipped.join(" and ")}.` : "They're in the catalogue now."
       );
       setRows([]);
       setTimeout(() => (close ? close() : router.push("/books")), skipped.length ? 2600 : 1000);

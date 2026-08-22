@@ -4,6 +4,7 @@ import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { studentLookup } from "@/lib/search";
+import { useToast } from "@/components/Toast";
 import { money } from "@/lib/config";
 import AsyncPicker, { type PickOption } from "@/components/AsyncPicker";
 import Select from "@/components/Select";
@@ -14,6 +15,7 @@ const field =
 
 export default function ChargePanel() {
   const router = useRouter();
+  const toast = useToast();
   const [student, setStudent] = useState<PickOption | null>(null);
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState<"lost" | "damaged">("lost");
@@ -22,7 +24,6 @@ export default function ChargePanel() {
   // straight away instead of deferring it until the router settles
   const [pending, setPending] = useState(false);
   const [, startRefresh] = useTransition();
-  const [msg, setMsg] = useState<{ ok?: string; err?: string } | null>(null);
 
   const searchStudents = useCallback(async (term: string): Promise<PickOption[]> => {
     const supabase = createClient();
@@ -41,15 +42,17 @@ export default function ChargePanel() {
 
   async function submit() {
     if (!student || !amount) return;
-    setMsg(null);
     setPending(true);
     const res = await addCharge(student.id, Number(amount), reason, note);
     setPending(false);
     if (res.error) {
-      setMsg({ err: res.error });
+      toast.error("Couldn't add the charge", res.error);
       return;
     }
-    setMsg({ ok: `${money(Number(amount))} ${reason} charge added to ${student.label}.` });
+    toast.success(
+      "Charge added",
+      `${money(Number(amount))} for a ${reason} book, on ${student.label}'s account.`
+    );
     setStudent(null);
     setAmount("");
     setNote("");
@@ -85,9 +88,6 @@ export default function ChargePanel() {
           <input id="note" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. Water damage to cover" className={field} />
         </div>
       </div>
-
-      {msg?.err && <p className="mt-4 rounded-lg border border-danger/20 bg-danger-soft px-3.5 py-2.5 text-sm font-medium text-danger">{msg.err}</p>}
-      {msg?.ok && <p className="mt-4 rounded-lg border border-ok/20 bg-ok-soft px-3.5 py-2.5 text-sm font-medium text-ok">{msg.ok}</p>}
 
       <button
         type="button"

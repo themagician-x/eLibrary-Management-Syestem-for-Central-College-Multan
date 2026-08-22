@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { money } from "@/lib/config";
 import { useBeforeUnload } from "@/components/unsaved";
+import { useToast } from "@/components/Toast";
 import type { Settings } from "@/lib/settings";
 import { saveSettings, type SettingsState } from "./actions";
 
@@ -70,6 +71,14 @@ const toForm = (s: Settings) => Object.fromEntries(RULES.map((r) => [r.name, Str
 
 export default function SettingsForm({ settings }: { settings: Settings }) {
   const [state, formAction, pending] = useActionState(saveSettings, {} as SettingsState);
+  const toast = useToast();
+
+  // announce the outcome once, after the save resolves
+  useEffect(() => {
+    if (state.ok) toast.success("Settings saved", "New loans use these rules from now on.");
+    else if (state.error) toast.error("Couldn't save the settings", state.error);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
   const [form, setForm] = useState(() => toForm(settings));
 
   const invalid = RULES.filter((r) => {

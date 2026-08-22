@@ -48,7 +48,7 @@ export default async function BookDetailPage({
           <Link href="/books" className="rounded-xl px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">← Books</Link>
           <WriteOffButton bookId={book.id} bookTitle={book.title} disabled={book.available_copies < 1} />
           <Link href={`/books/${book.id}/edit`} className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">Edit</Link>
-          <DeleteButton onDelete={deleteBook.bind(null, book.id)} name={`“${book.title}”`} title="Delete book" redirectTo="/books" />
+          <DeleteButton onDelete={deleteBook.bind(null, book.id)} name={`“${book.title}”`} title="Delete book" successTitle="Book deleted" redirectTo="/books" />
         </div>
       }
     >
