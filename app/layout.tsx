@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { siteUrl } from "@/lib/site";
 import { Fraunces, Manrope, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -20,11 +21,14 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: siteUrl,
   title: {
     default: "Central College Library",
     template: "%s · Central College Library",
   },
   description: "Library management system for Central College Multan.",
+  // an admin tool over student records — never in a search result
+  robots: { index: false, follow: false, nocache: true },
 };
 
 export default function RootLayout({

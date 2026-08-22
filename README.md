@@ -56,6 +56,9 @@ values from **Dashboard → Project Settings → API**:
   script has a default: a missing value stops it rather than falling back to a
   password that could end up committed.
 - `ALLOW_DESTRUCTIVE_TESTS` — set **only** on a disposable test project; see below.
+- `NEXT_PUBLIC_SITE_URL` — the public origin, e.g. `https://library.aqeelahmed.dev`.
+  Only needed behind a custom domain; without it the app uses the URL Vercel
+  assigns.
 
 `.env.local` is gitignored and must never be committed.
 
@@ -77,6 +80,19 @@ node --env-file=.env.local scripts/<name>.mjs
 > ⚠️ **The `m3`–`m7` suites delete every loan, fine and reservation** before they
 > run. They refuse to start unless `ALLOW_DESTRUCTIVE_TESTS` matches the project
 > ref in `NEXT_PUBLIC_SUPABASE_URL`. Never set that variable on production.
+
+## Deploying
+
+The app is a standard Next.js deployment on Vercel. Set every variable above
+in **Project Settings → Environment Variables** — `.env.local` is not read in
+production — and leave `ALLOW_DESTRUCTIVE_TESTS` **unset**, so a stray script
+run can never wipe live loans, fines and reservations.
+
+`robots.txt` returns `Disallow: /` and every page is served `noindex`. This is
+an admin tool over student records and has no business in a search result; the
+login gate is what protects it, this only keeps the deployment out of results.
+The proxy deliberately lets `/robots.txt` through unauthenticated, since a
+crawler redirected to `/login` would never read it.
 
 ## Security notes
 
