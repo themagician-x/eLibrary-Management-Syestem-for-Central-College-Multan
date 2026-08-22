@@ -5,28 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import { money } from "@/lib/config";
 import { getSettings } from "@/lib/settings";
 import type { FineWithRefs } from "@/lib/types";
-import FineBreakdown from "@/components/FineBreakdown";
-import type { FineContext } from "@/lib/fines";
-import TableScroll from "@/components/TableScroll";
-import StudentPeek from "@/components/StudentPeek";
-import BookPeek from "@/components/BookPeek";
 import Pagination, { pageFrom, rangeFor } from "@/components/Pagination";
-import FineActions from "./fine-actions";
+import FinesTable from "./fines-table";
 
 export const metadata: Metadata = { title: "Fines" };
-
-const fmt = (d: string) => new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-
-const reasonStyle: Record<string, string> = {
-  late: "bg-warn-soft text-warn",
-  lost: "bg-danger-soft text-danger",
-  damaged: "bg-warn-soft text-warn",
-};
-const statusStyle: Record<string, string> = {
-  unpaid: "bg-danger-soft text-danger",
-  paid: "bg-ok-soft text-ok",
-  waived: "bg-mist text-ink-mute",
-};
 
 export default async function FinesPage({
   searchParams,
@@ -119,48 +101,7 @@ export default async function FinesPage({
           <p className="mt-1.5 text-sm text-ink-mute">Late fees are added automatically when overdue books are returned.</p>
         </div>
       ) : (
-        <TableScroll
-          header={
-            <div className="hidden grid-cols-[1fr_1.7fr_100px_110px_190px] gap-4 border-b border-mist-deep bg-mist px-5 py-3 font-mono text-[0.6rem] uppercase tracking-wider text-ink-mute lg:grid">
-              <span>Student</span><span>Reason</span><span>Amount</span><span>Date</span><span className="text-right">Status / Actions</span>
-            </div>
-          }
-        >
-          {fines.map((f) => (
-            <div key={f.id} className="grid grid-cols-1 gap-2 border-b border-mist bg-paper px-5 py-3.5 last:border-0 lg:grid-cols-[1fr_1.7fr_100px_110px_190px] lg:items-start lg:gap-4">
-              <StudentPeek studentId={f.student?.id} className="group min-w-0 text-left">
-                <span className="block truncate font-semibold text-navy-900 group-hover:text-navy-700">{f.student?.name ?? "Unknown"}</span>
-                <span className="block truncate text-xs text-ink-mute">{f.student?.roll_no ?? ""}</span>
-              </StudentPeek>
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className={`inline-block rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold capitalize ${reasonStyle[f.reason]}`}>{f.reason}</span>
-                  {f.loan?.book && (
-                    <BookPeek bookId={f.loan.book.id} className="group min-w-0 text-left">
-                      <span className="block truncate text-xs font-semibold text-navy-900 group-hover:text-navy-700">
-                        {f.loan.book.title}
-                      </span>
-                    </BookPeek>
-                  )}
-                </div>
-                <FineBreakdown fine={f as unknown as FineContext} className="mt-1" />
-              </div>
-              <span className="font-display text-base font-semibold text-navy-900">{money(f.amount)}</span>
-              <span className="text-sm text-ink-soft">{fmt(f.created_at)}</span>
-              <div className="flex items-center justify-between gap-2 lg:justify-end">
-                {f.status !== "unpaid" && (
-                  <span className={`rounded-full px-2.5 py-0.5 text-[0.65rem] font-bold capitalize ${statusStyle[f.status]} lg:hidden`}>{f.status}</span>
-                )}
-                <FineActions
-                  id={f.id}
-                  status={f.status}
-                  amount={Number(f.amount)}
-                  student={f.student?.name ?? "the student"}
-                />
-              </div>
-            </div>
-          ))}
-        </TableScroll>
+        <FinesTable fines={fines} />
       )}
 
       {total > 0 && (

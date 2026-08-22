@@ -12,11 +12,17 @@ export default function FineActions({
   status,
   amount,
   student,
+  onDone,
+  wide,
 }: {
   id: string;
   status: FineStatus;
   amount: number;
   student: string;
+  /** Called after a successful change — lets the drawer close itself. */
+  onDone?: () => void;
+  /** Fill the width, for the drawer footer rather than a table cell. */
+  wide?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -37,15 +43,16 @@ export default function FineActions({
       const w = WORDING[s];
       toast.success(w.title, w.detail);
       router.refresh();
+      onDone?.();
     });
 
   if (status === "unpaid") {
     return (
-      <div className="flex items-center justify-end gap-1.5">
-        <button type="button" disabled={pending} onClick={() => set("paid")} className="rounded-lg bg-ok px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-ok/90 disabled:opacity-50">
+      <div className={`flex items-center gap-1.5 ${wide ? "" : "justify-end"}`}>
+        <button type="button" disabled={pending} onClick={() => set("paid")} className={`rounded-lg bg-ok px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-ok/90 disabled:opacity-50 ${wide ? "flex-1 py-2.5 text-sm" : ""}`}>
           Mark paid
         </button>
-        <button type="button" disabled={pending} onClick={() => set("waived")} className="rounded-lg border border-mist-deep px-2.5 py-1.5 text-xs font-bold text-ink-soft transition-colors hover:bg-mist disabled:opacity-50">
+        <button type="button" disabled={pending} onClick={() => set("waived")} className={`rounded-lg border border-mist-deep px-2.5 py-1.5 text-xs font-bold text-ink-soft transition-colors hover:bg-mist disabled:opacity-50 ${wide ? "flex-1 py-2.5 text-sm" : ""}`}>
           Waive
         </button>
       </div>
@@ -53,8 +60,8 @@ export default function FineActions({
   }
 
   return (
-    <div className="flex justify-end">
-      <button type="button" disabled={pending} onClick={() => set("unpaid")} className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink-mute transition-colors hover:bg-mist hover:text-navy-900 disabled:opacity-50">
+    <div className={`flex ${wide ? "" : "justify-end"}`}>
+      <button type="button" disabled={pending} onClick={() => set("unpaid")} className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold text-ink-mute transition-colors hover:bg-mist hover:text-navy-900 disabled:opacity-50 ${wide ? "w-full border border-mist-deep py-2.5 text-sm" : ""}`}>
         Undo
       </button>
     </div>
