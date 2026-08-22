@@ -24,7 +24,10 @@ const CARD_CSS = `
   color:#faa61a; margin-top:.5mm; }
 
 /* identity, full width now that nothing competes for the space */
-.sc .id { flex:none; padding:3mm 3.5mm 1.8mm; }
+.sc .id { flex:none; display:flex; gap:2.5mm; align-items:flex-start; padding:3mm 3.5mm 1.8mm; }
+.sc .who { flex:1; min-width:0; }
+.sc .mark { flex:none; width:14mm; height:14mm; }
+.sc .mark img { width:100%; height:100%; object-fit:contain; display:block; }
 .sc .name { font-size:11px; font-weight:800; color:#06377b; line-height:1.15;
   display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
   overflow:hidden; overflow-wrap:anywhere; }
@@ -47,7 +50,7 @@ const CARD_CSS = `
 .sc .foot .lost { color:#fcbc4d; }
 `;
 
-function cardHtml(student: Student, qr: string) {
+function cardHtml(student: Student, qr: string, logo: string) {
   // full date, matching how dates read everywhere else in the app
   const memberSince = new Date(student.created_at).toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -63,19 +66,22 @@ function cardHtml(student: Student, qr: string) {
     </div>
 
     <div class="id">
-      <div class="name">${escapeHtml(student.name)}</div>
-      <div class="field">
-        <span class="k">Roll no</span>
-        <span class="v">${escapeHtml(student.roll_no ?? "—")}</span>
+      <div class="who">
+        <div class="name">${escapeHtml(student.name)}</div>
+        <div class="field">
+          <span class="k">Roll no</span>
+          <span class="v">${escapeHtml(student.roll_no ?? "—")}</span>
+        </div>
+        <div class="field">
+          <span class="k">Class / Dept</span>
+          <span class="v">${escapeHtml(student.class_dept ?? "—")}</span>
+        </div>
+        <div class="field">
+          <span class="k">Member since</span>
+          <span class="v">${memberSince}</span>
+        </div>
       </div>
-      <div class="field">
-        <span class="k">Class / Dept</span>
-        <span class="v">${escapeHtml(student.class_dept ?? "—")}</span>
-      </div>
-      <div class="field">
-        <span class="k">Member since</span>
-        <span class="v">${memberSince}</span>
-      </div>
+      <div class="mark"><img src="${logo}" alt="" /></div>
     </div>
 
     <div class="qr">
@@ -109,6 +115,11 @@ export default function StudentCard({ student }: { student: Student }) {
   // keyed by payload so a stale QR is never shown for the next student opened
   const qr = cached?.payload === payload ? cached.url : null;
 
+  // the college mark, inlined once. The print window is written into a blank
+  // document, where a relative path would not resolve — and an embedded image
+  // cannot be missing from the printed card.
+  const [logo, setLogo] = useState<string | null>(null);
+
   useEffect(() => {
     let alive = true;
     QRCode.toDataURL(payload, { margin: 1, width: 220 })
@@ -119,8 +130,28 @@ export default function StudentCard({ student }: { student: Student }) {
     };
   }, [payload]);
 
+  useEffect(() => {
+    let alive = true;
+    fetch("/central-logo-mark.png")
+      .then((r) => r.blob())
+      .then(
+        (blob) =>
+          new Promise<string>((resolve, reject) => {
+            const fr = new FileReader();
+            fr.onload = () => resolve(String(fr.result));
+            fr.onerror = reject;
+            fr.readAsDataURL(blob);
+          })
+      )
+      .then((url) => alive && setLogo(url))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   function print() {
-    if (!qr) return;
+    if (!qr || !logo) return;
     const w = window.open("", "_blank", "width=760,height=680");
     if (!w) return;
 
@@ -150,7 +181,7 @@ export default function StudentCard({ student }: { student: Student }) {
           &ldquo;Fit to page&rdquo;) and turn <b>off</b> &ldquo;Headers and footers&rdquo; &mdash; otherwise the
           card won&rsquo;t come out at true licence size. Cut along the dashed line. This banner never prints.
         </div>
-        <div class="slot">${cardHtml(student, qr)}</div>
+        <div class="slot">${cardHtml(student, qr, logo)}</div>
         <script>window.onload = () => { window.print(); }</script>
       </body>
     </html>`);
@@ -162,15 +193,15 @@ export default function StudentCard({ student }: { student: Student }) {
       <p className="mb-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">Library card</p>
       <div className="rounded-2xl border border-mist-deep bg-paper p-4">
         <style dangerouslySetInnerHTML={{ __html: CARD_CSS }} />
-        {qr ? (
-          <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: cardHtml(student, qr) }} />
+        {qr && logo ? (
+          <div className="flex justify-center" dangerouslySetInnerHTML={{ __html: cardHtml(student, qr, logo) }} />
         ) : (
           <div className="mx-auto animate-pulse rounded-xl bg-mist" style={{ width: "54mm", height: "85.6mm" }} />
         )}
         <button
           type="button"
           onClick={print}
-          disabled={!qr}
+          disabled={!qr || !logo}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-navy-900 px-4 py-2.5 text-sm font-bold text-navy-900 transition-colors hover:bg-navy-900 hover:text-cream disabled:opacity-60"
         >
           <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-2M6 14h12v7H6z" /></svg>
