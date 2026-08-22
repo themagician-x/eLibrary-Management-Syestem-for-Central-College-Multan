@@ -76,6 +76,7 @@ node --env-file=.env.local scripts/<name>.mjs
 | `create-admin.mjs` | Creates or resets the admin user from `ADMIN_EMAIL` / `ADMIN_PASSWORD` |
 | `seed-demo.mjs` | Wipes and reseeds demo data |
 | `m*-e2e.mjs` | Milestone end-to-end suites |
+| `responsive-audit.mjs` | Checks every page at 320–1536px for overflow and small tap targets |
 
 > ⚠️ **The `m3`–`m7` suites delete every loan, fine and reservation** before they
 > run. They refuse to start unless `ALLOW_DESTRUCTIVE_TESTS` matches the project

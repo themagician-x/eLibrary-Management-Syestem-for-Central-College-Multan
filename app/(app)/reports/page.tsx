@@ -136,7 +136,7 @@ export default async function ReportsPage() {
                     <span className={`rounded-full px-2 py-0.5 text-[0.62rem] font-bold capitalize ${w.reason === "lost" ? "bg-danger-soft text-danger" : "bg-warn-soft text-warn"}`}>
                       {w.reason}
                     </span>
-                    <BookPeek bookId={w.book?.id} className="group min-w-0 text-left">
+                    <BookPeek bookId={w.book?.id} className="group -my-1 min-w-0 py-1.5 text-left">
                       <span className="block truncate text-sm font-semibold text-navy-900 group-hover:text-navy-700">
                         {w.book?.title ?? "Deleted book"}
                       </span>
@@ -144,7 +144,7 @@ export default async function ReportsPage() {
                   </div>
                   <div className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-xs text-ink-mute">
                     {w.student ? (
-                      <StudentPeek studentId={w.student.id} className="group min-w-0 text-left">
+                      <StudentPeek studentId={w.student.id} className="group -my-1 min-w-0 py-1.5 text-left">
                         <span className="block truncate group-hover:text-navy-900">
                           {w.student.name}
                           {w.student.roll_no ? ` · ${w.student.roll_no}` : ""}

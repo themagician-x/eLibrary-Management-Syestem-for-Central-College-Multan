@@ -102,12 +102,12 @@ export default async function GuidePage() {
         <p className="mb-3 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">
           On this page
         </p>
-        <ol className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2 lg:grid-cols-3">
+        <ol className="-my-1 grid gap-x-6 sm:grid-cols-2 lg:grid-cols-3">
           {CONTENTS.map(([id, label], i) => (
             <li key={id}>
               <a
                 href={`#${id}`}
-                className="group flex items-baseline gap-2 text-sm text-ink-soft transition-colors hover:text-navy-900"
+                className="group flex items-baseline gap-2 py-1.5 text-sm text-ink-soft transition-colors hover:text-navy-900"
               >
                 <span className="font-mono text-[0.62rem] text-gold-700">
                   {String(i + 1).padStart(2, "0")}
