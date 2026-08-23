@@ -10,9 +10,32 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // Without these, createServerClient throws and — because this runs on every
+  // matched path — the whole deployment answers 500 with a bare "Internal
+  // Server Error". Saying so plainly turns half an hour of guessing into a
+  // one-line fix. Both are NEXT_PUBLIC_, so they are read at build time: they
+  // must be set in Vercel *and* the project redeployed, not just restarted.
+  if (!url?.trim() || !anonKey?.trim()) {
+    const missing = [
+      !url?.trim() && "NEXT_PUBLIC_SUPABASE_URL",
+      !anonKey?.trim() && "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    ].filter(Boolean);
+    console.error(`[proxy] Supabase is not configured — missing ${missing.join(" and ")}`);
+    return new NextResponse(
+      `This deployment is not configured yet.\n\n` +
+        `Missing: ${missing.join(", ")}\n\n` +
+        `Set them in the hosting project's environment variables and redeploy.\n` +
+        `They are build-time values, so a restart alone will not pick them up.\n`,
+      { status: 503, headers: { "content-type": "text/plain; charset=utf-8" } }
+    );
+  }
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {

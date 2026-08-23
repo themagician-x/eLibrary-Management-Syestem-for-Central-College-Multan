@@ -84,10 +84,26 @@ node --env-file=.env.local scripts/<name>.mjs
 
 ## Deploying
 
-The app is a standard Next.js deployment on Vercel. Set every variable above
-in **Project Settings → Environment Variables** — `.env.local` is not read in
+The app is a standard Next.js deployment on Vercel. Set the variables in
+**Project Settings → Environment Variables** — `.env.local` is not read in
 production — and leave `ALLOW_DESTRUCTIVE_TESTS` **unset**, so a stray script
 run can never wipe live loans, fines and reservations.
+
+**The runtime needs exactly two of them:**
+
+| Variable | Why |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | the proxy and every page create a Supabase client |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | same |
+
+`SUPABASE_SERVICE_ROLE_KEY`, `DATABASE_URL`, `ADMIN_EMAIL` and `ADMIN_PASSWORD`
+are read only by `scripts/`, so they are **not** needed on the deployment.
+Leaving the service key off the host is the safer default.
+
+Both required values are `NEXT_PUBLIC_`, which means they are **inlined at
+build time**. Adding them in the dashboard is not enough — the project has to
+be **redeployed**. Without them the proxy answers every path with a 503
+explaining which one is missing.
 
 `robots.txt` returns `Disallow: /` and every page is served `noindex`. This is
 an admin tool over student records and has no business in a search result; the
