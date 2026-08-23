@@ -65,11 +65,13 @@ for (const width of WIDTHS) {
           if (b.width === 0 || b.height === 0) continue;
           if (b.width > vw + 1 || b.right > vw + 1 || b.left < -1) {
             const cs = getComputedStyle(el);
-            if (cs.position === "fixed" || cs.overflowX === "auto" || cs.overflowX === "scroll") continue;
-            let p = el.parentElement, inScroller = false;
+            if (cs.position === "fixed" || ["auto", "scroll"].includes(cs.overflowX)) continue;
+            // a decoration an ancestor deliberately clips is not overflow —
+            // the hero's off-canvas glow lives inside overflow:hidden by design
+            let p = el.parentElement, contained = false;
             while (p) { const pc = getComputedStyle(p);
-              if (pc.overflowX === "auto" || pc.overflowX === "scroll" || pc.overflowX === "hidden") { inScroller = true; break; } p = p.parentElement; }
-            if (inScroller) continue;
+              if (["auto", "scroll", "hidden", "clip"].includes(pc.overflowX)) { contained = true; break; } p = p.parentElement; }
+            if (contained) continue;
             culprits.push(`${el.tagName.toLowerCase()}.${(el.className?.toString?.() || "").split(" ").filter(Boolean).slice(0,3).join(".")} → right ${Math.round(b.right)} (vw ${vw})`);
           }
         }
