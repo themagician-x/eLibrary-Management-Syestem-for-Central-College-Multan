@@ -1,8 +1,17 @@
-# eLibrary-Management-Syestem-for-Central-College-Multan
+# eLibrary Management System — Central College Multan
 
-A library management system for **Central College Multan** — a single-admin tool for
-managing a physical book library: catalogue, student records, circulation, fines,
-reservations, dashboard and reports.
+A library management system for **Central College Multan**: a single-admin tool
+for running a physical book library — catalogue, student records, circulation,
+fines, reservations, dashboard and reports.
+
+**Live:** [library.aqeelahmed.dev](https://library.aqeelahmed.dev) · admin login required
+
+![The librarian's dashboard](./elibrary.png)
+
+> **University project.** Built by **Aqeel Ahmed** as a BSIT final-year project,
+> alongside the companion
+> [college website](https://github.com/aqeelahmed-dev/Central-College-Multan).
+> The data shown is demo data.
 
 Built with **Next.js 16** (App Router), **Tailwind CSS v4**, and **Supabase**
 (Postgres · Auth · Storage), deployed on **Vercel**.
@@ -127,6 +136,20 @@ crawler redirected to `/login` would never read it.
 - CI runs typecheck, lint, build and `npm audit`, and fails if a Supabase key or
   a PDF is ever committed.
 
+## Accessibility and responsiveness
+
+Every screen works from 320px up. No page overflows its viewport at any width,
+and no layout stretches the viewport to fit itself — `scripts/responsive-audit.mjs`
+checks both at seven widths and reports controls smaller than the 24px minimum
+in WCAG 2.5.8. Long lists scroll inside their own box rather than scrolling the
+whole page, so the header and filters stay put on a phone.
+
 ## Stack
 
 Next.js 16 · Tailwind CSS v4 · Supabase (Postgres · Auth · Storage) · Vercel
+
+## Author
+
+**Aqeel Ahmed** — BSIT final-year project, 2026.
+
+Built for Central College Multan, Khakwani House, LMQ Road, Multan.
