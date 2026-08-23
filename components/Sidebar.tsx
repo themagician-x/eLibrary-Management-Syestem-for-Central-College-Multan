@@ -79,18 +79,20 @@ export default function Sidebar({ email }: { email: string }) {
   return (
     <>
       {/* mobile top bar */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-mist-deep bg-paper px-4 py-3 lg:hidden">
+      {/* flex-none, not sticky — it sits outside the scrolling area now, so it
+          stays put without needing to be pinned */}
+      <header className="crest-lines z-30 flex flex-none items-center justify-between border-b border-navy-800/70 bg-navy-950 px-4 py-3 lg:hidden">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy-950 p-1.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-cream p-1.5">
             <Image src="/central-logo-mark.png" alt="" width={28} height={28} className="h-full w-full object-contain" />
           </span>
-          <span className="font-display text-sm font-semibold text-navy-900">Central College Library</span>
+          <span className="font-display text-sm font-semibold text-cream">Central College Library</span>
         </Link>
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open menu"
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-navy-900 hover:bg-mist"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-navy-100/75 transition-colors hover:bg-navy-800 hover:text-cream"
         >
           <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 7h16M4 12h16M4 17h16" /></svg>
         </button>
@@ -106,8 +108,8 @@ export default function Sidebar({ email }: { email: string }) {
       {/* mobile drawer */}
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="absolute inset-0 bg-navy-950/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <aside className="crest-lines absolute left-0 top-0 flex h-full w-72 flex-col bg-navy-950">
+          <div className="absolute inset-0 touch-none bg-navy-950/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <aside className="crest-lines absolute left-0 top-0 flex h-full w-72 max-w-[85vw] flex-col overflow-y-auto overscroll-contain bg-navy-950">
             <div className="flex items-center justify-between pr-3">
               {Brand}
               <button type="button" onClick={() => setOpen(false)} aria-label="Close menu" className="flex h-9 w-9 items-center justify-center rounded-lg text-navy-100/70 hover:bg-navy-800">

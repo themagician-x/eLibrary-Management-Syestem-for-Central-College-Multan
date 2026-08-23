@@ -13,20 +13,20 @@ export default function PageShell({
   badge?: ReactNode;
   actions?: ReactNode;
   /**
-   * Pin the page to the viewport on desktop so a long table scrolls inside its
-   * own box (under a sticky header) instead of scrolling the whole page. Below
-   * `lg` the sidebar stacks on top, so the page scrolls normally.
+   * Pin the page to the viewport so a long table scrolls inside its own box,
+   * under a header that stays put, instead of scrolling the whole page. Applies
+   * at every width — a phone benefits from it more than a desktop does.
    */
   fill?: boolean;
   children: ReactNode;
 }) {
   return (
     <div
-      className={`mx-auto max-w-6xl px-5 py-6 sm:px-8 sm:py-7 ${
-        fill ? "lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden" : ""
+      className={`mx-auto max-w-6xl px-4 py-4 sm:px-8 sm:py-7 ${
+        fill ? "flex h-full flex-col overflow-hidden" : ""
       }`}
     >
-      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-mist-deep pb-4 lg:flex-none">
+      <header className="flex flex-wrap items-end justify-between gap-4 border-b border-mist-deep pb-3 flex-none sm:pb-4">
         <div>
           <div className="flex flex-wrap items-center gap-3">
             <h1 className="font-display text-2xl font-semibold text-navy-900 sm:text-3xl">
@@ -42,7 +42,7 @@ export default function PageShell({
         </div>
         {actions}
       </header>
-      <div className={`mt-5 ${fill ? "lg:flex lg:min-h-0 lg:flex-1 lg:flex-col" : ""}`}>{children}</div>
+      <div className={`mt-4 sm:mt-5 ${fill ? "flex min-h-0 flex-1 flex-col" : ""}`}>{children}</div>
     </div>
   );
 }

@@ -63,18 +63,18 @@ export default async function FinesPage({
       }
     >
       {/* summary */}
-      <div className="mb-5 grid shrink-0 grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
-        <div className="rounded-2xl border border-danger/25 bg-danger-soft p-4 sm:p-5">
+      <div className="mb-4 grid shrink-0 grid-cols-3 gap-2 sm:mb-5 sm:gap-4">
+        <div className="rounded-2xl border border-danger/25 bg-danger-soft p-3 sm:p-5">
           <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-danger/80">Outstanding</p>
-          <p className="mt-1.5 font-display text-2xl font-semibold text-danger sm:mt-2 sm:text-3xl">{money(outstanding)}</p>
+          <p className="mt-1 font-display text-lg font-semibold text-danger sm:mt-2 sm:text-3xl">{money(outstanding)}</p>
         </div>
-        <div className="rounded-2xl border border-ok/25 bg-ok-soft p-4 sm:p-5">
+        <div className="rounded-2xl border border-ok/25 bg-ok-soft p-3 sm:p-5">
           <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-ok/80">Collected</p>
-          <p className="mt-1.5 font-display text-2xl font-semibold text-ok sm:mt-2 sm:text-3xl">{money(collected)}</p>
+          <p className="mt-1 font-display text-lg font-semibold text-ok sm:mt-2 sm:text-3xl">{money(collected)}</p>
         </div>
-        <div className="col-span-2 rounded-2xl border border-mist-deep bg-paper p-4 sm:col-span-1 sm:p-5">
+        <div className="rounded-2xl border border-mist-deep bg-paper p-3 sm:p-5">
           <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-ink-mute">Fine rate</p>
-          <p className="mt-1.5 font-display text-2xl font-semibold text-navy-900 sm:mt-2 sm:text-3xl">{money(fine_per_day)}<span className="text-base font-normal text-ink-mute">/day</span></p>
+          <p className="mt-1 font-display text-lg font-semibold text-navy-900 sm:mt-2 sm:text-3xl">{money(fine_per_day)}<span className="text-xs font-normal text-ink-mute sm:text-base">/day</span></p>
         </div>
       </div>
 
