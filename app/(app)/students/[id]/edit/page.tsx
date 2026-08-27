@@ -1,20 +1,42 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import PageShell from "@/components/PageShell";
+import { createClient } from "@/lib/supabase/server";
+import type { Student } from "@/lib/types";
+import StudentForm from "../../student-form";
+import { updateStudent } from "../../actions";
+
+export const metadata: Metadata = { title: "Edit student" };
 
 /**
- * The interface opens this as a modal over the list behind it, via the
- * intercepting route in @modal. This file is the non-intercepted match — what
- * a hard refresh, a typed URL or a bookmark would land on.
- *
- * The standalone form pages were dropped when everything moved to modals, so
- * rather than render one, send the visitor to the list the modal opens over.
- * The route itself has to keep existing: the intercept matches against it, so
- * deleting the file would take the modal down with it.
+ * The non-intercepted match for /students/[id]/edit — see the book editor for
+ * why a record's own edit route renders rather than redirecting, while the
+ * "add" routes send the visitor back to their list.
  */
-export default async function EditFallback({
+export default async function EditStudentPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/students/${id}`);
+  const supabase = await createClient();
+  const { data: student } = await supabase.from("students").select("*").eq("id", id).single();
+  if (!student) notFound();
+
+  const action = updateStudent.bind(null, id);
+
+  return (
+    <PageShell
+      title="Edit student"
+      subtitle={(student as Student).name}
+      actions={
+        <Link href={`/students/${id}`} className="rounded-xl px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
+          ← Back to the student
+        </Link>
+      }
+    >
+      <StudentForm action={action} student={student as Student} submitLabel="Save changes" />
+    </PageShell>
+  );
 }
