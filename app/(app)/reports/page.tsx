@@ -5,45 +5,82 @@ import BookPeek from "@/components/BookPeek";
 import StudentPeek from "@/components/StudentPeek";
 import { createClient } from "@/lib/supabase/server";
 import { money } from "@/lib/config";
+import { resolvePeriod, todayInLibrary } from "@/lib/period";
 import type { WriteOffWithRefs } from "@/lib/types";
+import PeriodPicker from "./period-picker";
 
 export const metadata: Metadata = { title: "Reports" };
 
 const day = (d: string) =>
   new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ period?: string; from?: string; to?: string }>;
+}) {
+  const period = resolvePeriod(await searchParams);
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
+
+  // Two kinds of figure, kept apart because they answer different questions.
+  // Activity happened *during* the period; the standing totals are true *now*
+  // and do not change with it — the collection does not shrink because you
+  // asked about August.
+  const inPeriod = <T,>(q: T, column: string): T => {
+    let out = q as unknown as {
+      gte: (c: string, v: string) => unknown;
+      lt: (c: string, v: string) => unknown;
+    };
+    if (period.from) out = out.gte(column, period.from.toISOString()) as typeof out;
+    if (period.to) out = out.lt(column, period.to.toISOString()) as typeof out;
+    return out as unknown as T;
+  };
 
   const [
     { count: titles },
     { count: students },
-    { count: totalLoans },
     { count: onLoan },
     { count: overdue },
     { data: unpaid },
-    { data: collected },
+    { count: issuedInPeriod },
+    { count: returnedInPeriod },
+    { data: chargedInPeriod },
+    { data: collectedInPeriod },
     { data: topBooks },
     { data: categories },
     { data: writeOffRows },
     { count: writeOffTotal },
   ] = await Promise.all([
+    // standing totals — as of now, whatever period is selected
     supabase.from("books").select("*", { count: "exact", head: true }),
     supabase.from("students").select("*", { count: "exact", head: true }),
-    supabase.from("loans").select("*", { count: "exact", head: true }),
     supabase.from("loans").select("*", { count: "exact", head: true }).is("returned_at", null),
     supabase.from("loans").select("*", { count: "exact", head: true }).is("returned_at", null).lt("due_at", nowIso),
     supabase.from("fines").select("amount").eq("status", "unpaid"),
-    supabase.from("fines").select("amount").eq("status", "paid"),
-    supabase.from("book_loan_counts").select("*").gt("loan_count", 0).order("loan_count", { ascending: false }).limit(8),
+
+    // activity within the period
+    inPeriod(supabase.from("loans").select("*", { count: "exact", head: true }), "issued_at"),
+    inPeriod(supabase.from("loans").select("*", { count: "exact", head: true }).not("returned_at", "is", null), "returned_at"),
+    inPeriod(supabase.from("fines").select("amount"), "created_at"),
+    // collected means money actually taken, so it counts by paid_at
+    inPeriod(supabase.from("fines").select("amount").eq("status", "paid"), "paid_at"),
+
+    supabase.rpc("top_books_between", {
+      p_from: period.from?.toISOString() ?? null,
+      p_to: period.to?.toISOString() ?? null,
+      p_limit: 8,
+    }),
     supabase.from("category_counts").select("*").order("book_count", { ascending: false }).limit(10),
-    supabase
-      .from("write_offs")
-      .select("*, book:books(id,title,author), student:students(id,name,roll_no)")
-      .order("created_at", { ascending: false })
-      .limit(25),
-    supabase.from("write_offs").select("*", { count: "exact", head: true }),
+    inPeriod(
+      supabase
+        .from("write_offs")
+        .select("*, book:books(id,title,author), student:students(id,name,roll_no)")
+        .order("created_at", { ascending: false })
+        .limit(25),
+      "created_at"
+    ),
+    inPeriod(supabase.from("write_offs").select("*", { count: "exact", head: true }), "created_at"),
   ]);
 
   const writeOffs = (writeOffRows ?? []) as unknown as WriteOffWithRefs[];
@@ -51,24 +88,34 @@ export default async function ReportsPage() {
   const damagedCount = writeOffs.length - lostCount;
   const writeOffCharged = writeOffs.reduce((s, w) => s + Number(w.charge), 0);
 
-  const outstanding = (unpaid ?? []).reduce((s, r) => s + Number(r.amount), 0);
-  const collectedTotal = (collected ?? []).reduce((s, r) => s + Number(r.amount), 0);
+  const sum = (rows: { amount: number | string }[] | null) =>
+    (rows ?? []).reduce((s, r) => s + Number(r.amount), 0);
 
-  const kpis = [
-    { label: "Titles", value: String(titles ?? 0) },
-    { label: "Students", value: String(students ?? 0) },
-    { label: "Loans (all time)", value: String(totalLoans ?? 0) },
-    { label: "On loan now", value: String(onLoan ?? 0) },
-    { label: "Overdue", value: String(overdue ?? 0), alert: (overdue ?? 0) > 0 },
-    { label: "Outstanding fines", value: money(outstanding), alert: outstanding > 0 },
-    { label: "Fines collected", value: money(collectedTotal) },
+  const outstanding = sum(unpaid);
+  const charged = sum(chargedInPeriod);
+  const collected = sum(collectedInPeriod);
+
+  const activity = [
+    { label: "Books borrowed", value: String(issuedInPeriod ?? 0) },
+    { label: "Books returned", value: String(returnedInPeriod ?? 0) },
+    { label: "Fines charged", value: money(charged) },
+    { label: "Fines collected", value: money(collected) },
     { label: "Lost / damaged", value: String(writeOffTotal ?? 0), alert: (writeOffTotal ?? 0) > 0 },
   ];
 
-  const topBookItems = (topBooks ?? []).map((b) => ({
-    label: b.title as string,
-    value: b.loan_count as number,
-    sub: (b.author as string) ?? undefined,
+  const standing = [
+    { label: "Titles", value: String(titles ?? 0) },
+    { label: "Students", value: String(students ?? 0) },
+    { label: "On loan now", value: String(onLoan ?? 0) },
+    { label: "Overdue", value: String(overdue ?? 0), alert: (overdue ?? 0) > 0 },
+    { label: "Outstanding fines", value: money(outstanding), alert: outstanding > 0 },
+  ];
+
+  type TopBook = { title: string; author: string | null; loan_count: number };
+  const topBookItems = ((topBooks ?? []) as TopBook[]).map((b) => ({
+    label: b.title,
+    value: Number(b.loan_count),
+    sub: b.author ?? undefined,
   }));
   const categoryItems = (categories ?? []).map((c) => ({
     label: c.category as string,
@@ -76,10 +123,35 @@ export default async function ReportsPage() {
   }));
 
   return (
-    <PageShell title="Reports" subtitle="A snapshot of the library.">
-      {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-        {kpis.map((k) => (
+    <PageShell
+      title="Reports"
+      subtitle="A snapshot of the library."
+      actions={<PeriodPicker period={period} today={todayInLibrary()} />}
+    >
+
+      {/* what happened during the chosen period */}
+      <h2 className="mt-6 flex flex-wrap items-baseline gap-x-2 font-display text-lg font-semibold text-navy-900">
+        Activity
+        <span className="font-sans text-sm font-normal text-ink-mute">
+          {period.key === "all" ? "over all time" : `in ${period.label}`}
+        </span>
+      </h2>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {activity.map((k) => (
+          <div key={k.label} className={`rounded-2xl border p-4 ${k.alert ? "border-danger/25 bg-danger-soft" : "border-mist-deep bg-paper"}`}>
+            <p className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">{k.label}</p>
+            <p className={`mt-2 font-display text-2xl font-semibold tabular-nums ${k.alert ? "text-danger" : "text-navy-900"}`}>{k.value}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* true now, whatever period is selected */}
+      <h2 className="mt-8 flex flex-wrap items-baseline gap-x-2 font-display text-lg font-semibold text-navy-900">
+        Right now
+        <span className="font-sans text-sm font-normal text-ink-mute">the standing position, whatever period is chosen</span>
+      </h2>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        {standing.map((k) => (
           <div key={k.label} className={`rounded-2xl border p-4 ${k.alert ? "border-danger/25 bg-danger-soft" : "border-mist-deep bg-paper"}`}>
             <p className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">{k.label}</p>
             <p className={`mt-2 font-display text-2xl font-semibold tabular-nums ${k.alert ? "text-danger" : "text-navy-900"}`}>{k.value}</p>
@@ -91,8 +163,10 @@ export default async function ReportsPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-mist-deep bg-paper p-6">
           <h2 className="font-display text-lg font-semibold text-navy-900">Most borrowed</h2>
-          <p className="mb-5 text-sm text-ink-mute">Top titles by number of loans.</p>
-          <BarList items={topBookItems} emptyLabel="No loans recorded yet." />
+          <p className="mb-5 text-sm text-ink-mute">
+            Top titles by loans {period.key === "all" ? "over all time" : `in ${period.label}`}.
+          </p>
+          <BarList items={topBookItems} emptyLabel="No loans in this period." />
         </section>
 
         <section className="rounded-2xl border border-mist-deep bg-paper p-6">
@@ -108,7 +182,7 @@ export default async function ReportsPage() {
           <div>
             <h2 className="font-display text-lg font-semibold text-navy-900">Lost &amp; damaged</h2>
             <p className="text-sm text-ink-mute">
-              Copies retired from the inventory
+              Copies retired {period.key === "all" ? "from the inventory" : `in ${period.label}`}
               {(writeOffTotal ?? 0) > writeOffs.length ? ` — latest ${writeOffs.length} of ${writeOffTotal}` : ""}.
             </p>
           </div>
@@ -125,7 +199,9 @@ export default async function ReportsPage() {
 
         {writeOffs.length === 0 ? (
           <p className="mt-4 rounded-xl bg-ok-soft px-4 py-3 text-sm font-medium text-ok">
-            No copies written off. The whole collection is accounted for. 🎉
+            {period.key === "all"
+              ? "No copies written off. The whole collection is accounted for. 🎉"
+              : `No copies were written off in ${period.label}. 🎉`}
           </p>
         ) : (
           <ul className="mt-4 divide-y divide-mist rounded-xl border border-mist">
