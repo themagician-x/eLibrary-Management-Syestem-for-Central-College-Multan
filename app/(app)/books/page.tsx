@@ -5,10 +5,13 @@ import SearchToolbar from "@/components/SearchToolbar";
 import { createClient } from "@/lib/supabase/server";
 import { parseSearch, orFilter } from "@/lib/search";
 import Pagination, { PAGE_SIZE, pageFrom, rangeFor } from "@/components/Pagination";
-import type { Book } from "@/lib/types";
+import { shelfLabel, type Book } from "@/lib/types";
 import BooksTable from "./books-table";
 
 export const metadata: Metadata = { title: "Books" };
+
+/** A uuid no row can have, for a filter that must return nothing. */
+const NO_MATCH = "00000000-0000-0000-0000-000000000000";
 
 export default async function BooksPage({
   searchParams,
@@ -21,21 +24,28 @@ export default async function BooksPage({
 
   const search = parseSearch(q);
 
-  // copies live on book_shelves now, so the shelf filter is an inner join on it
-  // — a title is "on CS-A1" if any of its copies are
+  // Which titles have copies on the filtered shelf. Resolved as its own query
+  // rather than an inner join, because filtering an embedded relation also
+  // filters what comes back in it — the row would then show only the copies on
+  // that one shelf while the availability beside it still counted them all.
+  let onShelf: string[] | null = null;
+  if (shelf) {
+    const { data } = await supabase
+      .from("book_shelves")
+      .select("book_id")
+      .eq("shelf", shelf);
+    onShelf = [...new Set((data ?? []).map((r) => r.book_id as string))];
+  }
+
   let query = supabase
     .from("books")
-    .select(
-      shelf
-        ? "*,book_shelves!inner(shelf,copies)"
-        : "*,book_shelves(shelf,copies)",
-      { count: "exact" }
-    )
+    .select("*,book_shelves(shelf,copies)", { count: "exact" })
     .order("created_at", { ascending: false });
   const filter = orFilter(search.terms, ["title", "author", "isbn"]);
   if (filter) query = query.or(filter);
   if (category) query = query.eq("category", category);
-  if (shelf) query = query.eq("book_shelves.shelf", shelf);
+  // an empty list must match nothing, which `in ()` will not do on its own
+  if (onShelf) query = onShelf.length ? query.in("id", onShelf) : query.eq("id", NO_MATCH);
   if (availability === "available") query = query.gt("available_copies", 0);
   else if (availability === "out") query = query.eq("available_copies", 0);
 
@@ -112,7 +122,8 @@ export default async function BooksPage({
             width: "w-40",
             options: [
               { value: "", label: "All shelves" },
-              ...shelves.map((s) => ({ value: s, label: s })),
+              // UNASSIGNED is a sentinel, so it needs reading as prose here too
+              ...shelves.map((s) => ({ value: s, label: shelfLabel(s) })),
             ],
           },
           {
