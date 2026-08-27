@@ -5,6 +5,10 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
   : "*.supabase.co";
 
 const nextConfig: NextConfig = {
+  // Next writes AGENTS.md and CLAUDE.md into the project root on every dev
+  // start unless this is off. They are build tooling artefacts, not part of
+  // the project, and they keep reappearing in the repository.
+  agentRules: false,
   images: {
     remotePatterns: [
       {
