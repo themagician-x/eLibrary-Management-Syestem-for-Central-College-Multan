@@ -14,7 +14,7 @@ export default async function InterceptedEditBook({
   const { id } = await params;
   const supabase = await createClient();
   const [{ data: book }, categories, shelves] = await Promise.all([
-    supabase.from("books").select("*").eq("id", id).single(),
+    supabase.from("books").select("*,book_shelves(shelf,copies)").eq("id", id).single(),
     getUsedCategories(),
     getUsedShelves(),
   ]);

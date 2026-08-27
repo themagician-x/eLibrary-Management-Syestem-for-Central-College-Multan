@@ -301,6 +301,16 @@ export async function updateBook(
     .select("shelf,copies")
     .eq("book_id", id);
 
+  // A form that submitted nothing usable is a form that failed to load, not a
+  // librarian asking for every copy to be removed — the editor always sends at
+  // least one row. Reconciling against it would silently empty the shelves, so
+  // leave them alone instead.
+  if (shelves.length === 0 && (current?.length ?? 0) > 0) {
+    revalidatePath("/books");
+    revalidatePath(`/books/${id}`);
+    return { ok: true, title: data.title };
+  }
+
   const wanted = new Map(shelves.map((s) => [s.shelf, s.copies]));
   const held = new Map((current ?? []).map((s) => [s.shelf, s.copies]));
 
