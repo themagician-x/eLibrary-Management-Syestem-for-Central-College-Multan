@@ -1,26 +1,15 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import PageShell from "@/components/PageShell";
-import IssuePanel from "../issue-panel";
-import { getSettings } from "@/lib/settings";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Issue a book" };
-
-export default async function IssueBookPage() {
-  const settings = await getSettings();
-  return (
-    <PageShell
-      title="Issue a book"
-      subtitle="Loan a book to a student."
-      actions={
-        <Link href="/circulation" className="rounded-xl px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
-          ← Back to circulation
-        </Link>
-      }
-    >
-      <div className="max-w-xl">
-        <IssuePanel loanDays={settings.loan_days} maxBooks={settings.max_books} />
-      </div>
-    </PageShell>
-  );
+/**
+ * The interface opens this as a modal over the list behind it, via the
+ * intercepting route in @modal. This file is the non-intercepted match — what
+ * a hard refresh, a typed URL or a bookmark would land on.
+ *
+ * The standalone form pages were dropped when everything moved to modals, so
+ * rather than render one, send the visitor to the list the modal opens over.
+ * The route itself has to keep existing: the intercept matches against it, so
+ * deleting the file would take the modal down with it.
+ */
+export default function CirculationIssueFallback() {
+  redirect("/circulation");
 }

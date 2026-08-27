@@ -1,42 +1,20 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import PageShell from "@/components/PageShell";
-import { createClient } from "@/lib/supabase/server";
-import type { Book } from "@/lib/types";
-import BookForm from "../../book-form";
-import { updateBook } from "../../actions";
-import { getUsedCategories } from "@/lib/categories";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Edit book" };
-
-export default async function EditBookPage({
+/**
+ * The interface opens this as a modal over the list behind it, via the
+ * intercepting route in @modal. This file is the non-intercepted match — what
+ * a hard refresh, a typed URL or a bookmark would land on.
+ *
+ * The standalone form pages were dropped when everything moved to modals, so
+ * rather than render one, send the visitor to the list the modal opens over.
+ * The route itself has to keep existing: the intercept matches against it, so
+ * deleting the file would take the modal down with it.
+ */
+export default async function EditFallback({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const [{ data: book }, categories] = await Promise.all([
-    supabase.from("books").select("*").eq("id", id).single(),
-    getUsedCategories(),
-  ]);
-
-  if (!book) notFound();
-
-  const action = updateBook.bind(null, id);
-
-  return (
-    <PageShell
-      title="Edit book"
-      subtitle={(book as Book).title}
-      actions={
-        <Link href="/books" className="rounded-xl px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
-          ← Back to books
-        </Link>
-      }
-    >
-      <BookForm action={action} book={book as Book} submitLabel="Save changes" categories={categories} />
-    </PageShell>
-  );
+  redirect(`/books/${id}`);
 }

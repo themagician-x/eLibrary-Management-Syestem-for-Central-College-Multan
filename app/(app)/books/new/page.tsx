@@ -1,26 +1,15 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import PageShell from "@/components/PageShell";
-import BookForm from "../book-form";
-import { createBook } from "../actions";
-import { getUsedCategories } from "@/lib/categories";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Add book" };
-
-export default async function NewBookPage() {
-  const categories = await getUsedCategories();
-
-  return (
-    <PageShell
-      title="Add a book"
-      subtitle="Add a new title to the catalogue."
-      actions={
-        <Link href="/books" className="rounded-xl px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">
-          ← Back to books
-        </Link>
-      }
-    >
-      <BookForm action={createBook} submitLabel="Add book" categories={categories} />
-    </PageShell>
-  );
+/**
+ * The interface opens this as a modal over the list behind it, via the
+ * intercepting route in @modal. This file is the non-intercepted match — what
+ * a hard refresh, a typed URL or a bookmark would land on.
+ *
+ * The standalone form pages were dropped when everything moved to modals, so
+ * rather than render one, send the visitor to the list the modal opens over.
+ * The route itself has to keep existing: the intercept matches against it, so
+ * deleting the file would take the modal down with it.
+ */
+export default function BooksNewFallback() {
+  redirect("/books");
 }
