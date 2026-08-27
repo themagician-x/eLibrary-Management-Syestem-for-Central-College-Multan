@@ -36,7 +36,17 @@ export default function DuplicateDialog({
   pending?: boolean;
   error?: string | null;
 }) {
-  const [placeShelf, setPlaceShelf] = useState(shelf);
+  // Where the copies should go by default. If the librarian named a shelf on
+  // the form, that wins. If they left it blank, the answer is almost never
+  // "nowhere" — it is the shelf this title already lives on, so offer the one
+  // holding the most copies rather than quietly filing them as unplaced.
+  const [placeShelf, setPlaceShelf] = useState(() => {
+    if (shelf.trim()) return shelf;
+    const placed = duplicate.shelves
+      .filter((s) => s.shelf !== "UNASSIGNED")
+      .sort((a, b) => b.copies - a.copies || a.shelf.localeCompare(b.shelf));
+    return placed[0]?.shelf ?? "";
+  });
   const [placeCopies, setPlaceCopies] = useState(String(Math.max(1, copies)));
   const headingRef = useRef<HTMLHeadingElement>(null);
 
