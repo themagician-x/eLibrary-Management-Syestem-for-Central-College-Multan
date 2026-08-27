@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Select from "@/components/Select";
-import type { WriteOffReason } from "@/lib/types";
+import { shelfLabel, type BookShelf, type WriteOffReason } from "@/lib/types";
 
 const field =
   "w-full rounded-xl border border-mist-deep bg-paper px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-gold-500 focus:ring-2 focus:ring-gold-500/25";
@@ -18,11 +18,21 @@ const label = "mb-1.5 block text-xs font-bold uppercase tracking-[0.08em] text-i
 type Props = {
   open: boolean;
   onClose: () => void;
-  onConfirm: (reason: WriteOffReason, note: string, charge: number) => Promise<{ error?: string }>;
+  onConfirm: (
+    reason: WriteOffReason,
+    note: string,
+    charge: number,
+    shelf: string | null
+  ) => Promise<{ error?: string }>;
   bookTitle: string;
   borrower?: string | null;
   withCharge?: boolean;
   defaultCharge?: string;
+  /**
+   * Where this title's copies sit. Offered as a choice only when they are on
+   * more than one shelf — with a single location there is nothing to ask.
+   */
+  shelves?: BookShelf[] | null;
 };
 
 /** Mounts only while open, so every visit starts from a clean form. */
@@ -38,10 +48,17 @@ function WriteOffForm({
   borrower,
   withCharge = false,
   defaultCharge = "",
+  shelves,
 }: Omit<Props, "open">) {
+  const placed = [...(shelves ?? [])].sort(
+    (a, b) => b.copies - a.copies || a.shelf.localeCompare(b.shelf)
+  );
+  const askShelf = placed.length > 1;
+
   const [reason, setReason] = useState<WriteOffReason>("lost");
   const [note, setNote] = useState("");
   const [charge, setCharge] = useState(defaultCharge);
+  const [shelf, setShelf] = useState(placed[0]?.shelf ?? "");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,7 +71,12 @@ function WriteOffForm({
   async function confirm() {
     setError(null);
     setPending(true);
-    const res = await onConfirm(reason, note, withCharge ? Number(charge || 0) : 0);
+    const res = await onConfirm(
+      reason,
+      note,
+      withCharge ? Number(charge || 0) : 0,
+      askShelf ? shelf : null
+    );
     setPending(false);
     if (res.error) setError(res.error);
     else onClose();
@@ -95,6 +117,25 @@ function WriteOffForm({
               ]}
             />
           </div>
+
+          {askShelf && (
+            <div>
+              <span className={label}>Taken from shelf</span>
+              <Select
+                ariaLabel="Shelf the copy is taken from"
+                value={shelf}
+                onChange={setShelf}
+                buttonClassName="w-full rounded-xl border bg-paper px-3.5 py-2.5 text-sm outline-none transition-colors focus:ring-2 focus:ring-gold-500/25"
+                options={placed.map((s) => ({
+                  value: s.shelf,
+                  label: `${shelfLabel(s.shelf)} — ${s.copies} ${s.copies === 1 ? "copy" : "copies"}`,
+                }))}
+              />
+              <p className="mt-1.5 text-xs text-ink-mute">
+                This title sits on {placed.length} shelves, so the count comes off the one you pick.
+              </p>
+            </div>
+          )}
 
           {withCharge && (
             <div>

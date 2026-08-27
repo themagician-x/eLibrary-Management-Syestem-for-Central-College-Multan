@@ -21,6 +21,7 @@ export default function Combobox({
   placeholder,
   createLabel,
   className = "",
+  maxRows,
 }: {
   suggestions: string[];
   value: string;
@@ -31,12 +32,22 @@ export default function Combobox({
   /** e.g. "Add" → renders `Add “Poetry” as a new category`. Omit to disable. */
   createLabel?: string;
   className?: string;
+  /**
+   * Cap the open list to roughly this many rows. Worth setting where the field
+   * sits low inside a scrolling panel: a long list is clipped by the panel
+   * rather than overflowing it, so a short one stays entirely visible.
+   */
+  maxRows?: number;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
+  const [placement, setPlacement] = useState<"down" | "up">("down");
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const listId = useId();
+
+  // how tall the open list can get, in px — mirrors the maxHeight applied below
+  const listHeight = maxRows ? maxRows * 40 + 12 : 256;
 
   const typed = value.trim();
   const q = typed.toLowerCase();
@@ -63,6 +74,51 @@ export default function Combobox({
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [open]);
+
+  /**
+   * Open upwards when there isn't room below.
+   *
+   * The field can sit low inside a dialog whose panel clips with
+   * `overflow: hidden`, so a list opening downwards is cut off at the panel's
+   * edge — and because the panel clips rather than scrolls, nothing reveals the
+   * rest. Measuring against every clipping ancestor (not just scrollable ones)
+   * is what makes this reliable: `overflow: hidden` crops just as hard as
+   * `auto` does.
+   */
+  useEffect(() => {
+    if (!open || !rootRef.current) return;
+
+    const measure = () => {
+      const root = rootRef.current;
+      if (!root) return;
+      const box = root.getBoundingClientRect();
+
+      // tightest bottom/top edge imposed by any ancestor that clips, or the viewport
+      let bottomLimit = window.innerHeight;
+      let topLimit = 0;
+      for (let el = root.parentElement; el; el = el.parentElement) {
+        const o = getComputedStyle(el);
+        if (/auto|scroll|hidden|clip/.test(o.overflowY + o.overflowX)) {
+          const r = el.getBoundingClientRect();
+          bottomLimit = Math.min(bottomLimit, r.bottom);
+          topLimit = Math.max(topLimit, r.top);
+        }
+      }
+
+      const below = bottomLimit - box.bottom;
+      const above = box.top - topLimit;
+      // only flip when down genuinely doesn't fit and up fits better
+      setPlacement(below < listHeight + 8 && above > below ? "up" : "down");
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [open, listHeight]);
 
   // keep the highlighted option in view
   useEffect(() => {
@@ -141,7 +197,10 @@ export default function Combobox({
           ref={listRef}
           id={listId}
           role="listbox"
-          className="absolute z-30 mt-1.5 max-h-64 w-full overflow-auto rounded-xl border border-mist-deep bg-paper p-1.5 shadow-[0_16px_40px_rgba(5,31,66,0.16)]"
+          className={`absolute z-30 w-full overflow-auto rounded-xl border border-mist-deep bg-paper p-1.5 shadow-[0_16px_40px_rgba(5,31,66,0.16)] ${
+            placement === "up" ? "bottom-full mb-1.5" : "top-full mt-1.5"
+          }`}
+          style={{ maxHeight: listHeight }}
         >
           {rows.map((row, i) => {
             const opt = row.value;

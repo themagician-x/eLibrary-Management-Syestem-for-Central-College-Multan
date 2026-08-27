@@ -125,7 +125,7 @@ export default function BookDrawer({
           <BookFacts book={b} />
 
           {/* barcode label */}
-          <BookLabel value={b.barcode ?? ""} title={b.title} shelf={b.shelf} />
+          <BookLabel value={b.barcode ?? ""} title={b.title} />
         </div>
 
         {/* footer actions */}

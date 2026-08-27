@@ -20,7 +20,11 @@ export default async function BookDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
-  const { data } = await supabase.from("books").select("*").eq("id", id).single();
+  const { data } = await supabase
+    .from("books")
+    .select("*,book_shelves(shelf,copies)")
+    .eq("id", id)
+    .single();
   if (!data) notFound();
   const book = data as Book;
 
@@ -46,7 +50,7 @@ export default async function BookDetailPage({
       actions={
         <div className="flex flex-wrap items-center gap-2">
           <Link href="/books" className="rounded-xl px-4 py-2 text-sm font-semibold text-ink-soft transition-colors hover:bg-mist">← Books</Link>
-          <WriteOffButton bookId={book.id} bookTitle={book.title} disabled={book.available_copies < 1} />
+          <WriteOffButton bookId={book.id} bookTitle={book.title} disabled={book.available_copies < 1} shelves={book.book_shelves} />
           <Link href={`/books/${book.id}/edit`} className="rounded-xl bg-navy-900 px-4 py-2 text-sm font-bold text-cream transition-colors hover:bg-navy-800">Edit</Link>
           <DeleteButton onDelete={deleteBook.bind(null, book.id)} name={`“${book.title}”`} title="Delete book" successTitle="Book deleted" redirectTo="/books" />
         </div>
@@ -113,7 +117,7 @@ export default async function BookDetailPage({
         </div>
 
         {/* barcode label */}
-        <BookLabel value={book.barcode ?? ""} title={book.title} shelf={book.shelf} />
+        <BookLabel value={book.barcode ?? ""} title={book.title} />
       </div>
     </PageShell>
   );

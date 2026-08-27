@@ -21,14 +21,21 @@ export default async function BooksPage({
 
   const search = parseSearch(q);
 
+  // copies live on book_shelves now, so the shelf filter is an inner join on it
+  // — a title is "on CS-A1" if any of its copies are
   let query = supabase
     .from("books")
-    .select("*", { count: "exact" })
+    .select(
+      shelf
+        ? "*,book_shelves!inner(shelf,copies)"
+        : "*,book_shelves(shelf,copies)",
+      { count: "exact" }
+    )
     .order("created_at", { ascending: false });
   const filter = orFilter(search.terms, ["title", "author", "isbn"]);
   if (filter) query = query.or(filter);
   if (category) query = query.eq("category", category);
-  if (shelf) query = query.eq("shelf", shelf);
+  if (shelf) query = query.eq("book_shelves.shelf", shelf);
   if (availability === "available") query = query.gt("available_copies", 0);
   else if (availability === "out") query = query.eq("available_copies", 0);
 
@@ -43,11 +50,13 @@ export default async function BooksPage({
 
   // distinct categories and shelves for the filters — read from the whole
   // catalogue, not the filtered page, so the options don't vanish as you narrow
-  const { data: facetRows } = await supabase.from("books").select("category,shelf");
-  const uniq = (key: "category" | "shelf") =>
-    [...new Set((facetRows ?? []).map((r) => r[key]).filter(Boolean))].sort() as string[];
-  const categories = uniq("category");
-  const shelves = uniq("shelf");
+  const { data: facetRows } = await supabase.from("books").select("category");
+  const categories = [
+    ...new Set((facetRows ?? []).map((r) => r.category).filter(Boolean)),
+  ].sort() as string[];
+
+  const { data: shelfRows } = await supabase.from("book_shelves").select("shelf");
+  const shelves = [...new Set((shelfRows ?? []).map((r) => r.shelf))].sort();
 
   const list = (books ?? []) as Book[];
   const filtering = Boolean(q || category || shelf || availability);

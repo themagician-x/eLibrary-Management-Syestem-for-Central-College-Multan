@@ -1,3 +1,26 @@
+/** Where copies of a title sit, and how many are on each shelf. */
+export type BookShelf = {
+  shelf: string;
+  copies: number;
+};
+
+/** The shelf a copy is on before the librarian has placed it. */
+export const UNASSIGNED_SHELF = "UNASSIGNED";
+
+/** "UNASSIGNED" is a sentinel, not somewhere in the building — read it as prose. */
+export function shelfLabel(shelf: string): string {
+  return shelf === UNASSIGNED_SHELF ? "Unassigned" : shelf;
+}
+
+/** "CS-A1 · 12, CS-B2 · 8", longest holding first. Empty when nothing is placed. */
+export function shelfSummary(shelves: BookShelf[] | null | undefined): string {
+  if (!shelves?.length) return "—";
+  return [...shelves]
+    .sort((a, b) => b.copies - a.copies || a.shelf.localeCompare(b.shelf))
+    .map((s) => `${shelfLabel(s.shelf)} · ${s.copies}`)
+    .join(", ");
+}
+
 export type Book = {
   id: string;
   title: string;
@@ -9,12 +32,14 @@ export type Book = {
   language: string;
   description: string | null;
   cover_url: string | null;
-  shelf: string | null;
+  /** Derived: the sum of book_shelves.copies. Never written directly. */
   total_copies: number;
   available_copies: number;
   barcode: string | null;
   created_at: string;
   updated_at: string;
+  /** Populated wherever the query embeds book_shelves. */
+  book_shelves?: BookShelf[] | null;
 };
 
 export type StudentStatus = "active" | "blocked";

@@ -104,19 +104,39 @@ const MORE = [
   ["Practical English Usage", "Michael Swan", "English", 3, "EN-A1"],
   ["The Elements of Style", "William Strunk Jr.", "English", 2, "EN-A2"],
 ];
+// shelf and copies are no longer columns on the book: copies live on
+// book_shelves, and books.total_copies is derived from them by trigger
+const placements = [
+  ...BOOKS.map(([title, , , , , , copies, shelf]) => ({ title, copies, shelf })),
+  ...MORE.map(([title, , , copies, shelf]) => ({ title, copies, shelf })),
+];
 const bookRows = [
-  ...BOOKS.map(([title, author, isbn, category, publisher, year, copies, shelf]) => ({
+  ...BOOKS.map(([title, author, isbn, category, publisher, year]) => ({
     title, author, isbn, category, publisher, published_year: year, language: "English",
-    total_copies: copies, shelf, barcode: bc(), cover_url: cover(isbn),
+    barcode: bc(), cover_url: cover(isbn),
   })),
-  ...MORE.map(([title, author, category, copies, shelf]) => ({
+  ...MORE.map(([title, author, category]) => ({
     title, author, isbn: null, category, publisher: null, published_year: null,
-    language: "English", total_copies: copies, shelf, barcode: bc(), cover_url: null,
+    language: "English", barcode: bc(), cover_url: null,
   })),
 ];
 const books = await insert("books", bookRows);
 const bookId = Object.fromEntries(books.map((b) => [b.title, b.id]));
 console.log(`Inserted ${books.length} books.`);
+
+// A couple of titles are split across two racks, so the demo shows the case
+// the single-shelf model could not record.
+const SPLIT = { "Introduction to Algorithms": "CS-D1", "Fundamentals of Physics": "PH-C1" };
+const shelfRows = [];
+for (const { title, copies, shelf } of placements) {
+  const id = bookId[title];
+  if (!id || copies < 1) continue;
+  const overflow = SPLIT[title] && copies > 1 ? Math.floor(copies / 2) : 0;
+  shelfRows.push({ book_id: id, shelf, copies: copies - overflow });
+  if (overflow) shelfRows.push({ book_id: id, shelf: SPLIT[title], copies: overflow });
+}
+await insert("book_shelves", shelfRows);
+console.log(`Placed copies across ${shelfRows.length} shelf entries.`);
 
 // ---------- students ----------
 const STUDENTS = [

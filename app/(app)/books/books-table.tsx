@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Book } from "@/lib/types";
+import { shelfSummary, type Book } from "@/lib/types";
 import DeleteButton from "@/components/DeleteButton";
 import TableScroll from "@/components/TableScroll";
 import { deleteBook } from "./actions";
@@ -51,7 +51,7 @@ export default function BooksTable({ books }: { books: Book[] }) {
               )}
             </span>
 
-            <span className="hidden truncate font-mono text-xs text-ink-soft sm:block">{book.shelf || "—"}</span>
+            <span className="hidden truncate font-mono text-xs text-ink-soft sm:block" title={shelfSummary(book.book_shelves)}>{shelfSummary(book.book_shelves)}</span>
 
             <span className="hidden sm:block">
               <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[0.65rem] font-bold ${book.available_copies > 0 ? "bg-ok-soft text-ok" : "bg-danger-soft text-danger"}`}>

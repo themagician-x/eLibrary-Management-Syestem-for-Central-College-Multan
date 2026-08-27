@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import WriteOffDialog from "@/components/WriteOffDialog";
 import { useToast } from "@/components/Toast";
-import type { WriteOffReason } from "@/lib/types";
+import type { BookShelf, WriteOffReason } from "@/lib/types";
 import { writeOffCopy } from "./actions";
 
 /**
@@ -16,17 +16,24 @@ export default function WriteOffButton({
   bookId,
   bookTitle,
   disabled,
+  shelves,
 }: {
   bookId: string;
   bookTitle: string;
   disabled?: boolean;
+  shelves?: BookShelf[] | null;
 }) {
   const router = useRouter();
   const toast = useToast();
   const [open, setOpen] = useState(false);
 
-  async function confirm(reason: WriteOffReason, note: string) {
-    const res = await writeOffCopy(bookId, reason, note);
+  async function confirm(
+    reason: WriteOffReason,
+    note: string,
+    _charge: number,
+    shelf: string | null
+  ) {
+    const res = await writeOffCopy(bookId, reason, note, shelf);
     if (res.error) return res;
 
     toast.success(
@@ -54,6 +61,7 @@ export default function WriteOffButton({
         onClose={() => setOpen(false)}
         onConfirm={confirm}
         bookTitle={bookTitle}
+        shelves={shelves}
       />
     </>
   );

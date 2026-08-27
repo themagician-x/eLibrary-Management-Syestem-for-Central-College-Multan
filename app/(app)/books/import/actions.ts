@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { generateBarcode } from "@/lib/barcode";
+import { normaliseIsbn, normaliseShelf } from "@/lib/isbn";
 
 export type ImportRow = {
   title: string;
@@ -48,15 +49,19 @@ export async function importBooks(rows: ImportRow[]): Promise<ImportResult> {
   const supabase = await createClient();
 
   // skip ISBNs already in the catalogue, so importing the same file twice
-  // doesn't silently duplicate every title
-  const isbns = [...new Set(withTitle.map((r) => r.isbn?.trim()).filter(Boolean) as string[])];
+  // doesn't silently duplicate every title. Matching is on the normalised key
+  // the database indexes, so a hyphenated ISBN in the file still recognises an
+  // unhyphenated one already catalogued.
+  const isbns = [
+    ...new Set(withTitle.map((r) => normaliseIsbn(r.isbn)).filter(Boolean) as string[]),
+  ];
   const existing = new Set<string>();
   for (let i = 0; i < isbns.length; i += BATCH) {
     const { data } = await supabase
       .from("books")
-      .select("isbn")
-      .in("isbn", isbns.slice(i, i + BATCH));
-    for (const row of data ?? []) if (row.isbn) existing.add(row.isbn);
+      .select("isbn_key")
+      .in("isbn_key", isbns.slice(i, i + BATCH));
+    for (const row of data ?? []) if (row.isbn_key) existing.add(row.isbn_key);
   }
 
   const seen = new Set<string>();
@@ -64,26 +69,29 @@ export async function importBooks(rows: ImportRow[]): Promise<ImportResult> {
 
   const clean = withTitle
     .filter((r) => {
-      const isbn = r.isbn?.trim();
-      if (!isbn) return true; // nothing to match on — let it through
-      if (existing.has(isbn) || seen.has(isbn)) {
+      const key = normaliseIsbn(r.isbn);
+      if (!key) return true; // nothing to match on — let it through
+      if (existing.has(key) || seen.has(key)) {
         duplicates++;
         return false;
       }
-      seen.add(isbn);
+      seen.add(key);
       return true;
     })
     .map((r) => ({
-      title: r.title.trim(),
-      author: r.author?.trim() || null,
-      isbn: r.isbn?.trim() || null,
-      publisher: r.publisher?.trim() || null,
-      published_year: r.published_year ?? null,
-      category: r.category?.trim() || null,
-      language: r.language?.trim() || "English",
-      shelf: r.shelf?.trim() || null,
-      total_copies: Math.max(0, Number(r.total_copies) || 1),
-      barcode: generateBarcode(),
+      // shelf and copies are placed separately, after the row has an id
+      book: {
+        title: r.title.trim(),
+        author: r.author?.trim() || null,
+        isbn: r.isbn?.trim() || null,
+        publisher: r.publisher?.trim() || null,
+        published_year: r.published_year ?? null,
+        category: r.category?.trim() || null,
+        language: r.language?.trim() || "English",
+        barcode: generateBarcode(),
+      },
+      shelf: normaliseShelf(r.shelf),
+      copies: Math.max(0, Number(r.total_copies) || 1),
     }));
 
   if (clean.length === 0) {
@@ -100,18 +108,46 @@ export async function importBooks(rows: ImportRow[]): Promise<ImportResult> {
   let inserted = 0;
   for (let i = 0; i < clean.length; i += BATCH) {
     const batch = clean.slice(i, i + BATCH);
-    const { error } = await supabase.from("books").insert(batch);
-    if (error) {
+    const { data: rowsIn, error } = await supabase
+      .from("books")
+      .insert(batch.map((b) => b.book))
+      .select("id");
+    if (error || !rowsIn) {
+      const message = error?.message ?? "Import failed.";
       return {
         inserted,
         duplicates,
         invalid,
         error:
           inserted > 0
-            ? `Imported ${inserted} book(s), then stopped: ${error.message}`
-            : error.message,
+            ? `Imported ${inserted} book(s), then stopped: ${message}`
+            : message,
       };
     }
+
+    // place each title's copies; insert returns rows in the order supplied
+    const placements = rowsIn
+      .map((row, j) => ({
+        book_id: row.id,
+        shelf: batch[j].shelf,
+        copies: batch[j].copies,
+      }))
+      .filter((p) => p.copies > 0);
+
+    if (placements.length) {
+      const { error: shelfError } = await supabase
+        .from("book_shelves")
+        .insert(placements);
+      if (shelfError) {
+        return {
+          inserted,
+          duplicates,
+          invalid,
+          error: `Imported ${inserted + rowsIn.length} book(s), but placing copies on shelves failed: ${shelfError.message}`,
+        };
+      }
+    }
+
     inserted += batch.length;
   }
 

@@ -16,3 +16,17 @@ export async function getUsedCategories(): Promise<string[]> {
     ),
   ].sort((a, b) => a.localeCompare(b));
 }
+
+/**
+ * Shelf codes already in use, offered as suggestions in the book form so a
+ * rack gets typed the same way every time rather than as CS-A1, cs a1 and
+ * CSA1. The sentinel for unplaced copies is not a real location, so it is
+ * left out of the list.
+ */
+export async function getUsedShelves(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("book_shelves").select("shelf");
+  return [...new Set((data ?? []).map((r) => r.shelf))]
+    .filter((s) => s && s !== "UNASSIGNED")
+    .sort((a, b) => a.localeCompare(b));
+}

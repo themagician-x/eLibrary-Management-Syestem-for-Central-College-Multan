@@ -1,13 +1,15 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Combobox from "@/components/Combobox";
 import { useModal, useFormDirty } from "@/components/unsaved";
 import { useToast } from "@/components/Toast";
 import type { Book, BookInput } from "@/lib/types";
-import type { BookFormState } from "./actions";
+import { addCopiesToShelf, type BookFormState, type DuplicateBook } from "./actions";
+import ShelfRows from "./shelf-rows";
+import DuplicateDialog from "./duplicate-dialog";
 
 /** Starting points only — anything the admin types becomes a category too. */
 const CATEGORIES = [
@@ -28,12 +30,15 @@ export default function BookForm({
   book,
   submitLabel,
   categories = [],
+  shelves = [],
 }: {
   action: Action;
   book?: Book;
   submitLabel: string;
   /** Categories already used in the catalogue, so custom ones stay on offer. */
   categories?: string[];
+  /** Shelf codes already in use, offered as suggestions. */
+  shelves?: string[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -42,8 +47,6 @@ export default function BookForm({
   const categoryOptions = [...new Set([...CATEGORIES, ...categories])].sort((a, b) =>
     a.localeCompare(b)
   );
-  const [state, formAction, pending] = useActionState(action, {} as BookFormState);
-
   const [coverUrl, setCoverUrl] = useState<string | null>(book?.cover_url ?? null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -53,6 +56,85 @@ export default function BookForm({
   // compares against the values the form opened with, so clearing a field
   // you just typed leaves nothing to warn about
   const { ref: formRef, check: markDirty, reset: clearDirty } = useFormDirty();
+
+  // ---- duplicate handling -------------------------------------------------
+  // createBook returns a duplicate instead of inserting when the details match
+  // a catalogued title. The dialog then offers the action that is almost always
+  // meant: put these copies on a shelf of the book that already exists.
+  const [state, setState] = useState<BookFormState>({});
+  const [pending, startSubmit] = useTransition();
+  const [dismissed, setDismissed] = useState<DuplicateBook | null>(null);
+  const [dupError, setDupError] = useState<string | null>(null);
+  const [placing, startPlacing] = useTransition();
+
+  // captured as the form is submitted, since reading the hidden field during
+  // render would be reading the DOM at the wrong moment
+  const [typed, setTyped] = useState<{ shelf: string; copies: number }>({
+    shelf: "",
+    copies: 1,
+  });
+
+  /**
+   * Submitted by hand rather than through <form action={…}>. React resets an
+   * uncontrolled form once a form action resolves, which would empty every
+   * field the moment the duplicate warning came back — losing everything the
+   * librarian had typed at precisely the point they need it kept.
+   */
+  function submit(form: HTMLFormElement, confirmDuplicate = false) {
+    const formData = new FormData(form);
+    if (confirmDuplicate) formData.set("confirm_duplicate", "1");
+
+    // the first shelf row becomes the dialog's starting point
+    try {
+      const rows = JSON.parse(String(formData.get("shelves") ?? "[]")) as {
+        shelf?: string;
+        copies?: number;
+      }[];
+      const first = rows.find((r) => (r.copies ?? 0) > 0);
+      setTyped({ shelf: first?.shelf ?? "", copies: first?.copies ?? 1 });
+    } catch {
+      setTyped({ shelf: "", copies: 1 });
+    }
+
+    setDupError(null);
+    startSubmit(async () => {
+      const res = await action({}, formData);
+      setDismissed(null);
+      setState(res);
+    });
+  }
+
+  // derived rather than mirrored into state, so a fresh result from the action
+  // reopens the dialog without an effect chasing it
+  const duplicate =
+    state.duplicate && state.duplicate !== dismissed ? state.duplicate : null;
+
+  function placeOnShelf(shelf: string, copies: number) {
+    if (!duplicate) return;
+    const target = duplicate;
+    setDupError(null);
+    startPlacing(async () => {
+      const res = await addCopiesToShelf(target.id, shelf, copies);
+      if (res.error) {
+        setDupError(res.error);
+        return;
+      }
+      setDismissed(target);
+      setDirtyCtx(false);
+      clearDirty();
+      toast.success(
+        "Copies added",
+        `${copies} ${copies === 1 ? "copy" : "copies"} added to ${target.title}.`
+      );
+      if (close) close();
+      else router.push("/books");
+    });
+  }
+
+  /** Only offered for a title match — an ISBN collision the database refuses. */
+  function addAnyway() {
+    if (formRef.current) submit(formRef.current, true);
+  }
 
   // the category combobox and the cover buttons write to hidden inputs, which
   // fire no form event — re-check once React has committed the new value
@@ -98,7 +180,31 @@ export default function BookForm({
   const v = (k: keyof BookInput) => (book?.[k as keyof Book] ?? "") as string | number;
 
   return (
-    <form ref={formRef} action={formAction} onInput={markDirty} onChange={markDirty} onSubmit={clearDirty} className="grid gap-8 lg:grid-cols-[240px_1fr]">
+    <>
+    {duplicate && (
+      <DuplicateDialog
+        key={duplicate.id}
+        duplicate={duplicate}
+        shelf={typed.shelf}
+        copies={typed.copies}
+        onPlace={placeOnShelf}
+        onEdit={() => setDismissed(duplicate)}
+        onAddAnyway={addAnyway}
+        pending={placing}
+        error={dupError}
+      />
+    )}
+    <form
+      ref={formRef}
+      onInput={markDirty}
+      onChange={markDirty}
+      onSubmit={(e) => {
+        e.preventDefault();
+        clearDirty();
+        submit(e.currentTarget);
+      }}
+      className="grid gap-8 lg:grid-cols-[240px_1fr]"
+    >
       {/* cover column */}
       <div>
         <span className={label}>Cover</span>
@@ -177,15 +283,13 @@ export default function BookForm({
             <label className={label} htmlFor="language">Language</label>
             <input id="language" name="language" defaultValue={(book?.language ?? "English")} placeholder="English" className={field} />
           </div>
-          <div>
-            <label className={label} htmlFor="shelf">Shelf location</label>
-            <input id="shelf" name="shelf" defaultValue={v("shelf")} placeholder="e.g. Rack A-3" className={field} />
-          </div>
-          <div>
-            <label className={label} htmlFor="total_copies">Copies</label>
-            <input id="total_copies" name="total_copies" type="number" min="0" defaultValue={book?.total_copies ?? 1} className={field} />
-          </div>
         </div>
+
+        <ShelfRows
+          shelves={book?.book_shelves}
+          suggestions={shelves}
+          onChange={markDirty}
+        />
 
         <div>
           <label className={label} htmlFor="description">Description</label>
@@ -208,5 +312,6 @@ export default function BookForm({
         </button>
       </div>
     </form>
+    </>
   );
 }

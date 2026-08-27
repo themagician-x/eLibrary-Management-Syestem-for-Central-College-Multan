@@ -4,18 +4,20 @@ import { useEffect, useRef } from "react";
 import JsBarcode from "jsbarcode";
 
 /**
- * Scannable Code128 barcode for a book, with the title and shelf printed on the
- * label. The barcode encodes the book's `barcode` value so it matches the
- * circulation "scan to issue" lookup.
+ * Scannable Code128 barcode for a book, with the title printed on the label.
+ * The barcode encodes the book's `barcode` value so it matches the circulation
+ * "scan to issue" lookup.
+ *
+ * No shelf is printed. A label is stuck to one physical copy, but a title can
+ * hold copies on several shelves at once — so the only honest thing a label
+ * could carry is a distribution, which is not true of the copy it is on.
  */
 export default function BookLabel({
   value,
   title,
-  shelf,
 }: {
   value: string;
   title: string;
-  shelf?: string | null;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -51,15 +53,12 @@ export default function BookLabel({
           .label { width:200px; border:1px solid #d3dbe8; border-radius:6px; padding:10px; text-align:center; }
           .t { font-size:10px; font-weight:700; color:#06377b; line-height:1.2; margin-bottom:5px; }
           svg { max-width:100%; height:auto; }
-          .shelf { font-size:10px; font-weight:700; color:#12203a; margin-top:3px; }
-          .shelf span { color:#6a778c; font-weight:600; font-size:8px; letter-spacing:1px; }
           .c { font-size:8px; font-weight:700; text-transform:uppercase; letter-spacing:1.2px; color:#06377b; margin-top:5px; }
         </style></head>
         <body>
           <div class="label">
             <div class="t">${title}</div>
             ${svg}
-            ${shelf ? `<div class="shelf"><span>SHELF</span> ${shelf}</div>` : ""}
             <div class="c">Central College Library</div>
           </div>
           <script>window.onload = () => { window.print(); }</script>
@@ -74,11 +73,6 @@ export default function BookLabel({
         <svg ref={svgRef} className="mx-auto h-auto max-w-full" />
       ) : (
         <p className="py-3 text-center text-xs text-ink-mute">No barcode assigned</p>
-      )}
-      {shelf && (
-        <p className="mt-1 text-center text-xs font-semibold text-navy-900">
-          <span className="font-mono text-[0.58rem] uppercase tracking-[0.12em] text-ink-mute">Shelf</span> {shelf}
-        </p>
       )}
       <p className="mt-1 text-center font-mono text-[0.55rem] font-bold uppercase tracking-[0.12em] text-navy-900/70">
         Central College Library

@@ -1,4 +1,5 @@
-import type { Book } from "@/lib/types";
+import type { ReactNode } from "react";
+import { shelfLabel, type Book } from "@/lib/types";
 
 const day = (d: string) =>
   new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
@@ -15,15 +16,37 @@ export default function BookFacts({
   book: Book;
   className?: string;
 }) {
-  const facts: [string, string | number | null][] = [
+  // One line per shelf, across the full width of the grid. There is no separate
+  // total: the count beside each shelf sums to it, and the availability badge
+  // above already states it — a lone number here only invited the question of
+  // which of the three was authoritative.
+  const placed = [...(book.book_shelves ?? [])].sort(
+    (a, b) => b.copies - a.copies || a.shelf.localeCompare(b.shelf)
+  );
+  const shelves: ReactNode = placed.length ? (
+    <ul className="space-y-1">
+      {placed.map((s) => (
+        // shelf left, count hard right — the counts then read as a column of
+        // their own against the rule that closes the row
+        <li key={s.shelf} className="flex items-baseline justify-between gap-4">
+          <span className="font-mono text-xs">{shelfLabel(s.shelf)}</span>
+          <span className="font-normal tabular-nums text-ink-soft">
+            {s.copies} {s.copies === 1 ? "copy" : "copies"}
+          </span>
+        </li>
+      ))}
+    </ul>
+  ) : null;
+
+  // `wide` fills both columns of the grid
+  const facts: [string, ReactNode, boolean?][] = [
     ["Author", book.author],
     ["ISBN", book.isbn],
     ["Publisher", book.publisher],
     ["Year", book.published_year],
     ["Category", book.category],
     ["Language", book.language],
-    ["Shelf", book.shelf],
-    ["Copies", book.total_copies],
+    ["Shelves", shelves, true],
     ["Barcode", book.barcode],
     ["Added", day(book.created_at)],
   ];
@@ -31,8 +54,8 @@ export default function BookFacts({
   return (
     <div className={className}>
       <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
-        {facts.map(([k, v]) => (
-          <div key={k} className="border-b border-mist pb-3">
+        {facts.map(([k, v, wide]) => (
+          <div key={k} className={`border-b border-mist pb-3 ${wide ? "sm:col-span-2" : ""}`}>
             <dt className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-ink-mute">{k}</dt>
             <dd className="mt-1 break-words text-sm font-semibold text-navy-900">
               {v === null || v === "" ? <span className="font-normal text-ink-mute/60">—</span> : v}
